@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acceso Seguro</title>
+</head>
+<body>
+    <h2>Ingrese su Correo y Clave</h2>
+    <input type="email" id="email" placeholder="Ingrese su correo"><br><br>
+    <input type="password" id="password" placeholder="Clave de acceso"><br><br>
+    <button onclick="validarAcceso()">Ingresar</button>
+
+    <p id="status"></p>
+
+    <script>
+        const googleScriptURL = "https://script.google.com/macros/s/AKfycbz67XTf7vEr9LeNcNNI4RHGZZlxP04A6_6n3FJ11lyE-5jeY-RR_GkbUXKH-Fzb4oeWWg/exec"; // Reemplaza con tu URL de Web App
+
+        function validarAcceso() {
+            let email = document.getElementById("email").value;
+            let password = document.getElementById("password").value;
+
+            fetch(googleScriptURL, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: JSON.stringify({ email: email, password: password }) // Enviamos email y clave como JSON
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("status").innerText = data; // Mostramos la respuesta del script
+                if (data.includes("correctamente")) {
+                    // Aquí puedes redirigir al usuario a tu "archivito"
+                    // window.location.href = "URL_DE_TU_ARCHIVITO";
+                } else {
+                    document.getElementById("status").innerText = data; // Muestra el mensaje de error
+                }
+            })
+            .catch(error => {
+                document.getElementById("status").innerText = "Error de conexión.";
+            });
+        }
+    </script>
+</body>
+</html>
