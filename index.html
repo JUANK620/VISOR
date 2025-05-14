@@ -22,16 +22,16 @@
             fetch(googleScriptURL, {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: JSON.stringify({ email: email, password: password }) // Enviamos email y clave como JSON
+                body: new URLSearchParams({ email: email, password: password })
             })
             .then(response => response.text())
             .then(data => {
-                document.getElementById("status").innerText = data; // Mostramos la respuesta del script
+                document.getElementById("status").innerText = data; // Mostrar respuesta del script
                 if (data.includes("correctamente")) {
-                    // Aquí puedes redirigir al usuario a tu "archivito"
-                    // window.location.href = "URL_DE_TU_ARCHIVITO";
+                    localStorage.setItem("usuarioAutenticado", "true");
+                    window.location.href = "visor.html"; // Redirigir al visor tras acceso exitoso
                 } else {
-                    document.getElementById("status").innerText = data; // Muestra el mensaje de error
+                    document.getElementById("status").innerText = data; // Mostrar mensaje de error
                 }
             })
             .catch(error => {
