@@ -1,8 +1,9 @@
+<!-- Verificación de acceso: Si no se ha autenticado, redirige a login.html -->
 <script>
-    if (!localStorage.getItem("usuarioAutenticado")) {
-        alert("No tienes acceso. Debes iniciar sesión primero.");
-        window.location.href = "login.html"; // Redirige al login si no está autenticado
-    }
+  if (!localStorage.getItem("usuarioAutenticado")) {
+    alert("No tienes acceso. Debes iniciar sesión primero.");
+    window.location.href = "login.html"; // Redirige al login si no está autenticado
+  }
 </script>
 <!DOCTYPE html>
 <html lang="es">
@@ -50,7 +51,7 @@
       Visor de Retenciones con Filtro, Detalle y Eliminación de Duplicados
       (junto a Exportación a Excel)
     </h2>
-    <!-- Controles: Selector de filtro, carga de archivos y botones de Exportar y Eliminar Duplicados -->
+    <!-- Controles: Selector de filtro, carga de archivos y botones -->
     <div class="controls">
       <label for="filterSelect"><strong>Mostrar:</strong></label>
       <select id="filterSelect">
@@ -61,7 +62,7 @@
       &nbsp;&nbsp;
       <input type="file" id="fileInput" multiple />
       &nbsp;&nbsp;
-      <button class="export-button" onclick="exportTableToExcel('invoicesTable','retenciones_export')">
+      <button class="export-button" onclick="exportTableToExcel('invoicesTable', 'retenciones_export')">
         Exportar a Excel
       </button>
       &nbsp;&nbsp;
@@ -97,18 +98,19 @@
         </tr>
       </tfoot>
     </table>
-    
+
+    <!-- Inicio del bloque JavaScript para la funcionalidad del visor -->
     <script>
-      // Función para formatear números a dos decimales.
+      /* Función para formatear números a dos decimales */
       function formatNumber(val) {
         const num = Number(val);
         return isNaN(num) ? "0.00" : num.toFixed(2);
       }
       
-      // Arreglo global para almacenar todos los registros extraídos.
+      // Arreglo global para almacenar todos los registros extraídos del XML.
       let allRecords = [];
       
-      // Actualiza los totales en función de los registros filtrados.
+      /* Actualiza los totales de Base Imponible y Valor Retenido en función de los registros filtrados */
       function updateTotals(records) {
         let totalBase = 0;
         let totalValor = 0;
@@ -122,40 +124,33 @@
         document.getElementById("valorRetenidoAcum").textContent = formatNumber(totalValor);
       }
       
-      // Renderiza la tabla aplicando el filtro seleccionado y resalta duplicados en "Clave de Acceso".
+      /* Renderiza la tabla según el filtro y resalta celdas duplicadas */
       function renderTable() {
         const tbody = document.querySelector("#invoicesTable tbody");
         tbody.innerHTML = "";
         const filterValue = document.getElementById("filterSelect").value;
-        // Filtrar registros según "tipoRetencion" (ya que la columna no se muestra, se usa para el filtro)
         const filteredRecords = allRecords.filter(record => {
-          if (filterValue === "Todos") return true;
-          return record.tipoRetencion === filterValue;
+          return (filterValue === "Todos") || (record.tipoRetencion === filterValue);
         });
         
-        // Calcular la frecuencia de cada combinación: clave de acceso + tipo de retención.
+        // Calcular la frecuencia de cada combinación (claveAcceso + tipoRetencion)
         const frequency = {};
         filteredRecords.forEach(record => {
-          // La clave es la combinación de claveAcceso + "|" + tipoRetencion
           const key = record.claveAcceso + "|" + record.tipoRetencion;
           frequency[key] = (frequency[key] || 0) + 1;
         });
         
+        // Insertar cada registro en una fila
         filteredRecords.forEach(record => {
           const tr = document.createElement("tr");
-          // Si la combinación está duplicada, aplicamos un estilo especial en la celda de clave.
           const key = record.claveAcceso + "|" + record.tipoRetencion;
-          const claveStyle = (frequency[key] > 1)
-            ? "mso-number-format:'\\@'; background-color:#ffdddd;"
-            : "mso-number-format:'\\@';";
-          
-          // Botón "Ver Detalles" siempre; si hay duplicados, se muestran los botones "Comparar" y "Conservar Único"
+          const claveStyle = frequency[key] > 1 ? "mso-number-format:'\\@'; background-color:#ffdddd;" : "mso-number-format:'\\@';";
           let actionButtons = `<button onclick="verDetalle('${encodeURIComponent(JSON.stringify(record))}')">Ver Detalles</button>`;
+          // Si hay duplicados, se ofrecen opciones adicionales.
           if (frequency[key] > 1) {
             actionButtons += ` <button onclick="compareRecords('${key}')">Comparar</button>`;
             actionButtons += ` <button onclick="uniqueRecord('${key}')">Conservar Único</button>`;
           }
-          
           tr.innerHTML = `
             <td>${record.noDocumento}</td>
             <td style="${claveStyle}">${record.claveAcceso}</td>
@@ -171,7 +166,7 @@
         updateTotals(filteredRecords);
       }
       
-      // Muestra en detalle los datos de un registro en un alert.
+      /* Muestra en detalle los datos de un registro en un alert */
       function verDetalle(recordStr) {
         const record = JSON.parse(decodeURIComponent(recordStr));
         const detalle = `
@@ -188,9 +183,8 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
         alert(detalle);
       }
       
-      // Compara y muestra en un alert todos los registros duplicados para una combinación dada.
+      /* Compara registros duplicados para una combinación dada y muestra un resumen */
       function compareRecords(key) {
-        // Extrae todos los registros cuyo "claveAcceso + '|' + tipoRetencion" coincida con la llave.
         const duplicates = allRecords.filter(rec => (rec.claveAcceso + "|" + rec.tipoRetencion) === key);
         let mensaje = `Se han encontrado ${duplicates.length} registros duplicados para:\n\n`;
         mensaje += `Clave de Acceso: ${duplicates[0].claveAcceso}\nTipo de Retención: ${duplicates[0].tipoRetencion}\n\n`;
@@ -207,12 +201,11 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
         alert(mensaje);
       }
       
-      // Conserva solo el primer registro de una determinada combinación (clave y tipo).
+      /* Conserva únicamente el primer registro de una combinación duplicada */
       function uniqueRecord(key) {
         if (confirm("Se eliminarán los registros duplicados para esta combinación y se conservará solo el primero. ¿Desea continuar?")) {
           allRecords = allRecords.filter((rec, index, arr) => {
             if ((rec.claveAcceso + "|" + rec.tipoRetencion) === key) {
-              // Conservar solo el primer registro que se encuentre; es decir, cuyo índice coincide con el índice de la primera aparición.
               return arr.findIndex(x => (x.claveAcceso + "|" + x.tipoRetencion) === key) === index;
             }
             return true;
@@ -221,13 +214,12 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
         }
       }
       
-      // Botón global para eliminar duplicados en toda la tabla.
+      /* Elimina todos los duplicados de la tabla dejando solo la primera ocurrencia de cada combinación */
       function eliminarDuplicados() {
         if (confirm("Se eliminarán todos los registros duplicados, conservándose solo la primera ocurrencia de cada combinación (Clave de Acceso y Tipo de Retención). ¿Desea continuar?")) {
-          // Utilizamos un objeto para llevar el seguimiento de la primera ocurrencia para cada clave.
           const seen = {};
           allRecords = allRecords.filter(rec => {
-            let key = rec.claveAcceso + "|" + rec.tipoRetencion;
+            const key = rec.claveAcceso + "|" + rec.tipoRetencion;
             if (seen[key]) {
               return false;
             } else {
@@ -240,12 +232,10 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
         }
       }
       
-      // Listener para actualizar la tabla al cambiar el filtro.
-      document.getElementById("filterSelect").addEventListener("change", function () {
-        renderTable();
-      });
+      // Actualiza la tabla cuando se cambia el filtro
+      document.getElementById("filterSelect").addEventListener("change", renderTable);
       
-      // Manejador para la carga de archivos XML.
+      /* Manejador para cargar y procesar los archivos XML */
       document.getElementById("fileInput").addEventListener("change", function (event) {
         const files = event.target.files;
         if (files.length === 0) {
@@ -253,26 +243,24 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
           return;
         }
         
-        // Reiniciamos el arreglo global.
+        // Reinicia el arreglo de registros
         allRecords = [];
         
-        Array.from(files).forEach((file) => {
+        Array.from(files).forEach(file => {
           const reader = new FileReader();
           reader.onload = function (e) {
             try {
               const parser = new DOMParser();
-              // Parsear el XML externo.
               const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
               console.log("Documento XML leído:", xmlDoc);
               
-              // Obtener el contenido del nodo <comprobante> (dentro del CDATA).
+              // Obtener el contenido del nodo <comprobante> (dentro de CDATA)
               let comprobanteCDATAText = xmlDoc.getElementsByTagName("comprobante")[0]?.textContent;
               if (!comprobanteCDATAText) {
                 alert(`El archivo ${file.name} no contiene información en CDATA.`);
                 return;
               }
               comprobanteCDATAText = comprobanteCDATAText.trim();
-              // Parsear el XML interno.
               const retencionXML = parser.parseFromString(comprobanteCDATAText, "text/xml");
               console.log("Contenido CDATA parseado:", retencionXML);
               
@@ -282,21 +270,20 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
                 return;
               }
               
-              // Extraer datos generales.
+              // Extraer datos generales
               const infoTrib = comprobanteRetencion.getElementsByTagName("infoTributaria")[0];
               const estab = infoTrib.getElementsByTagName("estab")[0]?.textContent.trim() || "000";
               const ptoEmi = infoTrib.getElementsByTagName("ptoEmi")[0]?.textContent.trim() || "000";
               const secuencial = infoTrib.getElementsByTagName("secuencial")[0]?.textContent.trim() || "000000000";
               const noDocumento = `${estab}-${ptoEmi}-${secuencial}`;
               const claveAcceso = infoTrib.getElementsByTagName("claveAcceso")[0]?.textContent.trim() || "No disponible";
-              // Extraer RUC y Razón Social.
               const ruc = infoTrib.getElementsByTagName("ruc")[0]?.textContent.trim() || "No disponible";
               const razonSocial = infoTrib.getElementsByTagName("razonSocial")[0]?.textContent.trim() || "No disponible";
               
               const infoComp = comprobanteRetencion.getElementsByTagName("infoCompRetencion")[0];
               const fechaEmision = infoComp.getElementsByTagName("fechaEmision")[0]?.textContent.trim() || "No disponible";
               
-              // Extraer registros de impuestos.
+              // Extraer registros de impuestos
               const impuestosElem = comprobanteRetencion.getElementsByTagName("impuestos")[0];
               if (!impuestosElem) {
                 alert(`El archivo ${file.name} no contiene la sección de impuestos.`);
@@ -308,11 +295,9 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
                 return;
               }
               
-              // Iterar sobre cada <impuesto>.
+              // Procesar cada nodo <impuesto>
               for (let i = 0; i < impuestoNodes.length; i++) {
                 const imp = impuestoNodes[i];
-                
-                // Extraer el valor del nodo <codigo> para determinar el tipo de retención (para filtro).
                 const codigoGeneral = imp.getElementsByTagName("codigo")[0]?.textContent.trim() || "";
                 let tipoRetencion = "";
                 if (codigoGeneral === "2") {
@@ -327,12 +312,11 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
                 const porcentajeRetener = imp.getElementsByTagName("porcentajeRetener")[0]?.textContent.trim() || "No disponible";
                 const valorRetenido = imp.getElementsByTagName("valorRetenido")[0]?.textContent.trim() || "0";
                 
-                // Crear objeto con todos los datos.
                 const record = {
                   noDocumento,
                   claveAcceso,
                   fechaEmision,
-                  tipoRetencion,  // Para filtro (no se muestra en la tabla)
+                  tipoRetencion,
                   ruc,
                   razonSocial,
                   baseImponible,
@@ -341,7 +325,6 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
                 };
                 allRecords.push(record);
               }
-              // Renderizar la tabla.
               renderTable();
             } catch (error) {
               console.error("Error al procesar " + file.name, error);
@@ -352,21 +335,15 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
         });
       });
       
-      // Función para exportar la tabla a Excel.
+      /* Función para exportar la tabla a Excel */
       function exportTableToExcel(tableID, filename = "") {
         var downloadLink;
         var dataType = "application/vnd.ms-excel";
         var tableSelect = document.getElementById(tableID);
-        // Usar outerHTML de la tabla y reemplazar espacios.
         var tableHTML = tableSelect.outerHTML.replace(/ /g, "%20");
-        
-        // Especificar el nombre del archivo.
         filename = filename ? filename + ".xls" : "export_data.xls";
-        
-        // Crear enlace de descarga.
         downloadLink = document.createElement("a");
         document.body.appendChild(downloadLink);
-        
         if (navigator.msSaveOrOpenBlob) {
           var blob = new Blob(["\ufeff", tableHTML], { type: dataType });
           navigator.msSaveOrOpenBlob(blob, filename);
