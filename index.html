@@ -15,29 +15,25 @@
     <script>
         const googleScriptURL = "https://script.google.com/macros/s/AKfycbx8HHgzCvs8TpngvZDEcNQilL2Cq5EbLkR2CNSoutvpUQMiv14QJzes6AY3Qw-Fq2b2/exec"; // Reemplaza con tu URL de Web App
 
-        function validarAcceso() {
-            let email = document.getElementById("email").value;
-            let password = document.getElementById("password").value;
+       function validarAcceso() {
+  let email = document.getElementById("email").value;
+  let password = document.getElementById("password").value;
 
-            fetch(googleScriptURL, {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({ email: email, password: password })
-            })
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById("status").innerText = data; // Mostrar respuesta del script
-                if (data.includes("correctamente")) {
-                    localStorage.setItem("usuarioAutenticado", "true");
-                    window.location.href = "visor.html"; // Redirigir al visor tras acceso exitoso
-                } else {
-                    document.getElementById("status").innerText = data; // Mostrar mensaje de error
-                }
-            })
-            .catch(error => {
-                document.getElementById("status").innerText = "Error de conexión.";
-            });
-        }
-    </script>
-</body>
-</html>
+  fetch(googleScriptURL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ email: email, password: password })
+  })
+  .then(response => response.text())
+  .then(data => {
+      document.getElementById("status").innerText = data;
+      // Asegúrate de que el mensaje del script incluya alguna frase que indique éxito, por ejemplo "Bienvenido"
+      if (data.includes("Bienvenido")) {
+          localStorage.setItem("usuarioAutenticado", "true");
+          window.location.href = "visor.html"; // O la ruta que hayas configurado
+      }
+  })
+  .catch(error => {
+      document.getElementById("status").innerText = "Error de conexión.";
+  });
+}
