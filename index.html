@@ -1,14 +1,26 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Acceso Seguro</title>
+  <meta charset="UTF-8">
+  <title>Acceso Seguro</title>
+  <script>
+    // Definición global de la función validarAcceso
+    function validarAcceso() {
+      let email = document.getElementById("email").value;
+      let password = document.getElementById("password").value;
+      console.log("validarAcceso ejecutada:", email, password);
+      // Aquí puedes agregar el código fetch y demás lógica
+    }
+  </script>
 </head>
 <body>
-    <h2>Ingrese su Correo y Clave</h2>
-    <input type="email" id="email" placeholder="Ingrese su correo"><br><br>
-    <input type="password" id="password" placeholder="Clave de acceso"><br><br>
-    <button onclick="validarAcceso()">Ingresar</button>
+  <h2>Ingrese su Correo y Clave</h2>
+  <input type="email" id="email" placeholder="Ingrese su correo"><br><br>
+  <input type="password" id="password" placeholder="Clave de acceso"><br><br>
+  <button onclick="validarAcceso()">Ingresar</button>
+</body>
+</html>
+
 
     <p id="status"></p>
 
