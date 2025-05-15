@@ -4,12 +4,34 @@
   <meta charset="UTF-8">
   <title>Acceso Seguro</title>
   <script>
+    // URL de tu Google Apps Script
+    const googleScriptURL = "https://script.google.com/macros/s/AKfycbzWUDe4c_IQPQPjz5togLqfJCfhhzfbGhhFzs0nxGWUC9ySvUi_ThKTAGZlz_sD1Ao4oA/exec";
+    
     // Definición global de la función validarAcceso
     function validarAcceso() {
       let email = document.getElementById("email").value;
       let password = document.getElementById("password").value;
       console.log("validarAcceso ejecutada:", email, password);
-      // Aquí puedes agregar el código fetch y demás lógica
+
+      fetch(googleScriptURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ email: email, password: password })
+      })
+      .then(response => response.text())
+      .then(data => {
+          console.log("Respuesta recibida:", data);
+          document.getElementById("status").innerText = data;
+          // Si la respuesta contiene "Bienvenido" redirige al visor
+          if (data.includes("Bienvenido")) {
+              localStorage.setItem("usuarioAutenticado", "true");
+              window.location.href = "visor.html";  // Cambia "visor.html" por la ruta adecuada en tu proyecto
+          }
+      })
+      .catch(error => {
+          console.error("Error en la conexión:", error);
+          document.getElementById("status").innerText = "Error de conexión.";
+      });
     }
   </script>
 </head>
@@ -18,34 +40,7 @@
   <input type="email" id="email" placeholder="Ingrese su correo"><br><br>
   <input type="password" id="password" placeholder="Clave de acceso"><br><br>
   <button onclick="validarAcceso()">Ingresar</button>
+  
+  <p id="status"></p>
 </body>
 </html>
-
-
-    <p id="status"></p>
-
-    <script>
-        const googleScriptURL = "https://script.google.com/macros/s/AKfycbzWUDe4c_IQPQPjz5togLqfJCfhhzfbGhhFzs0nxGWUC9ySvUi_ThKTAGZlz_sD1Ao4oA/exec"; // Reemplaza con tu URL de Web App
-
-       function validarAcceso() {
-  let email = document.getElementById("email").value;
-  let password = document.getElementById("password").value;
-
-  fetch(googleScriptURL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ email: email, password: password })
-  })
-  .then(response => response.text())
-  .then(data => {
-      document.getElementById("status").innerText = data;
-      // Asegúrate de que el mensaje del script incluya alguna frase que indique éxito, por ejemplo "Bienvenido"
-      if (data.includes("Bienvenido")) {
-          localStorage.setItem("usuarioAutenticado", "true");
-          window.location.href = "visor.html"; // O la ruta que hayas configurado
-      }
-  })
-  .catch(error => {
-      document.getElementById("status").innerText = "Error de conexión.";
-  });
-}
