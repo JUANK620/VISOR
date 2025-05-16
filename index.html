@@ -3,17 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <title>Acceso Seguro</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 300px;
+    }
+    h2 {
+      color: #333;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #status {
+      margin-top: 10px;
+      font-size: 14px;
+      color: red;
+    }
+    .whatsapp {
+      margin-top: 15px;
+    }
+    .whatsapp a {
+      text-decoration: none;
+      color: #25D366;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .whatsapp img {
+      width: 30px;
+      margin-right: 10px;
+    }
+  </style>
   <script>
-    // URL de tu Google Apps Script (actualizada)
     const googleScriptURL = "https://script.google.com/macros/s/AKfycbzWUDe4c_IQPQPjz5togLqfJCfhhzfbGhhFzs0nxGWUC9ySvUi_ThKTAGZlz_sD1Ao4oA/exec";
-    
-    // Exponemos la función de validación al ámbito global (window)
+
     window.validarAcceso = function() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-      console.log("validarAcceso ejecutada:", email, password);
-      
-      // Realizamos la solicitud fetch usando "application/x-www-form-urlencoded"
+
       fetch(googleScriptURL, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -21,30 +78,33 @@
       })
       .then(response => response.text())
       .then(data => {
-          console.log("Respuesta recibida:", data);
-          // Mostramos el resultado en el elemento con id "status"
           document.getElementById("status").innerText = data;
-          // Si la respuesta contiene "Bienvenido", se asume acceso exitoso
           if (data.includes("Bienvenido")) {
               localStorage.setItem("usuarioAutenticado", "true");
-              // Redirige al visor; modifica "visor.html" según corresponda
               window.location.href = "visor.html";
           }
       })
       .catch(error => {
-          console.error("Error de conexión:", error);
           document.getElementById("status").innerText = "Error de conexión.";
       });
     }
   </script>
 </head>
 <body>
-  <h2>Ingrese su Correo y Clave</h2>
-  <input type="email" id="email" placeholder="Ingrese su correo"><br><br>
-  <input type="password" id="password" placeholder="Clave de acceso"><br><br>
-  <!-- El atributo onclick llamará a la función validarAcceso, que ya está en el ámbito global -->
-  <button onclick="validarAcceso()">Ingresar</button>
-  
-  <p id="status"></p>
+  <div class="container">
+    <h2>Acceso Seguro</h2>
+    <input type="email" id="email" placeholder="Ingrese su correo">
+    <input type="password" id="password" placeholder="Clave de acceso">
+    <button onclick="validarAcceso()">Ingresar</button>
+    <p id="status"></p>
+    
+    <!-- Sección de contacto por WhatsApp -->
+    <div class="whatsapp">
+      <a href="https://wa.me/593961200472" target="_blank">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+        Contáctame
+      </a>
+    </div>
+  </div>
 </body>
 </html>
