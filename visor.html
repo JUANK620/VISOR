@@ -1,57 +1,196 @@
-<!-- Verificación de acceso: Si no se ha autenticado, redirige a login.html -->
-<script>
-  if (!localStorage.getItem("usuarioAutenticado")) {
-    alert("No tienes acceso. Debes iniciar sesión primero.");
-    window.location.href = "login.html"; // Redirige al login si no está autenticado
-  }
-</script>
 <!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Visor de Retenciones con Filtro, Detalle, Eliminación de Duplicados y Exportación a Excel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
       body {
-        font-family: Arial, sans-serif;
+        font-family: 'Inter', sans-serif;
         margin: 20px;
+        background-color: #f3f4f6;
+        color: #1f2937;
+      }
+      h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #4b5563;
+        font-weight: 600;
       }
       .controls {
-        margin-bottom: 10px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+      }
+      .controls label {
+        font-weight: 500;
+        color: #6b7280;
+      }
+      .controls select,
+      .controls input[type="file"] {
+        padding: 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 0.9rem;
+        box-shadow: none;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        background-color: white;
+        font-family: 'Inter', sans-serif;
+      }
+      .controls select:focus,
+      .controls input[type="file"]:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      }
+      .controls button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        color: white;
+        background-color: #3b82f6;
+        transition: background-color 0.15s ease-in-out, transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        font-family: 'Inter', sans-serif;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .controls button:hover {
+        background-color: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 7px rgba(0, 0, 0, 0.15);
+      }
+      .controls button:active {
+        background-color: #1e40af;
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
       }
       table {
         border-collapse: collapse;
         width: 100%;
-        margin-top: 10px;
+        margin-top: 20px;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       }
       th,
       td {
-        border: 1px solid #333;
-        padding: 6px;
+        border: 1px solid #e5e7eb;
+        padding: 10px 12px;
         text-align: left;
+        font-size: 0.85rem;
+        color: #374151;
       }
       th {
-        background-color: #f2f2f2;
+        background-color: #f9fafb;
+        font-weight: 600;
+        color: #4b5563;
+      }
+      tbody tr:nth-child(odd) {
+        background-color: white;
+      }
+      tbody tr:nth-child(even) {
+        background-color: #f7fafc;
+      }
+      tbody tr:hover {
+        background-color: #eff6ff;
       }
       .numeric {
         text-align: right;
       }
+      tfoot {
+        background-color: #f9fafb;
+        font-weight: 600;
+        color: #4b5563;
+      }
+      tfoot th,
+      tfoot td {
+        border-top: 2px solid #d1d5db;
+        padding: 10px 12px;
+      }
       .export-button,
       .unique-button {
-        margin-top: 10px;
+        margin-top: 20px;
       }
-      /* Clase para resaltar celdas duplicadas en Clave de Acceso */
       .duplicate-cell {
-        background-color: #ffdddd;
+        background-color: #fecaca;
+        color: #b91c1c;
+      }
+      .actions-cell {
+        display: flex;
+        gap: 6px;
+      }
+      .actions-cell button {
+        padding: 6px 10px;
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.8rem;
+        cursor: pointer;
+        color: white;
+        background-color: #3b82f6;
+        transition: background-color 0.15s ease-in-out, transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        font-family: 'Inter', sans-serif;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .actions-cell button:hover {
+        background-color: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 7px rgba(0, 0, 0, 0.15);
+      }
+      .actions-cell button:active {
+        background-color: #1e40af;
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      }
+      .actions-cell button.warning {
+        background-color: #dc2626;
+      }
+      .actions-cell button.warning:hover {
+        background-color: #b91c1c;
+      }
+      .actions-cell button.secondary {
+        background-color: #6b7280;
+      }
+      .actions-cell button.secondary:hover {
+        background-color: #4b5563;
+      }
+      .header-section {
+        background-color: #003366; /* Azul oscuro similar al del SRI */
+        padding: 10px 0;
+        margin-bottom: 20px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .header-section h2 {
+        color: white;
+        margin: 0;
+        font-size: 1.85rem;
+        font-weight: 600;
+      }
+
+      @media (max-width: 768px) {
+        .controls {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+        }
+        .controls button {
+          margin-top: 0;
+        }
+        .header-section h2 {
+          font-size: 1.2rem;
+        }
       }
     </style>
   </head>
   <body>
-    <h2>
-      Visor de Retenciones con Filtro, Detalle y Eliminación de Duplicados
-      (junto a Exportación a Excel)
-    </h2>
-    <!-- Controles: Selector de filtro, carga de archivos y botones -->
+    <div class="header-section">
+      <h2>Visor de Retenciones con Filtro, Detalle y Eliminación de Duplicados (y Exportación a Excel)</h2>
+    </div>
     <div class="controls">
       <label for="filterSelect"><strong>Mostrar:</strong></label>
       <select id="filterSelect">
@@ -59,18 +198,15 @@
         <option value="RET IVA">RET IVA</option>
         <option value="RET FUENTE">RET FUENTE</option>
       </select>
-      &nbsp;&nbsp;
       <input type="file" id="fileInput" multiple />
-      &nbsp;&nbsp;
       <button class="export-button" onclick="exportTableToExcel('invoicesTable', 'retenciones_export')">
         Exportar a Excel
       </button>
-      &nbsp;&nbsp;
       <button class="unique-button" onclick="eliminarDuplicados()">
         Eliminar Duplicados
       </button>
     </div>
-    
+
     <table id="invoicesTable">
       <thead>
         <tr>
@@ -78,6 +214,7 @@
           <th>Clave de Acceso</th>
           <th>Fecha de Emisión</th>
           <th>RUC</th>
+          <th>Razón Social</th>
           <th class="numeric">Base Imponible</th>
           <th class="numeric">Porcentaje Retener</th>
           <th class="numeric">Valor Retenido</th>
@@ -85,12 +222,10 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Se insertarán las filas dinámicamente -->
-      </tbody>
+        </tbody>
       <tfoot>
         <tr>
-          <th colspan="3">Totales:</th>
-          <th></th>
+          <th colspan="4">Totales:</th>
           <th class="numeric" id="baseImponibleAcum">0.00</th>
           <th></th>
           <th class="numeric" id="valorRetenidoAcum">0.00</th>
@@ -98,18 +233,16 @@
         </tr>
       </tfoot>
     </table>
-
-    <!-- Inicio del bloque JavaScript para la funcionalidad del visor -->
     <script>
       /* Función para formatear números a dos decimales */
       function formatNumber(val) {
         const num = Number(val);
         return isNaN(num) ? "0.00" : num.toFixed(2);
       }
-      
+
       // Arreglo global para almacenar todos los registros extraídos del XML.
       let allRecords = [];
-      
+
       /* Actualiza los totales de Base Imponible y Valor Retenido en función de los registros filtrados */
       function updateTotals(records) {
         let totalBase = 0;
@@ -123,7 +256,7 @@
         document.getElementById("baseImponibleAcum").textContent = formatNumber(totalBase);
         document.getElementById("valorRetenidoAcum").textContent = formatNumber(totalValor);
       }
-      
+
       /* Renderiza la tabla según el filtro y resalta celdas duplicadas */
       function renderTable() {
         const tbody = document.querySelector("#invoicesTable tbody");
@@ -132,30 +265,33 @@
         const filteredRecords = allRecords.filter(record => {
           return (filterValue === "Todos") || (record.tipoRetencion === filterValue);
         });
-        
+
         // Calcular la frecuencia de cada combinación (claveAcceso + tipoRetencion)
         const frequency = {};
         filteredRecords.forEach(record => {
           const key = record.claveAcceso + "|" + record.tipoRetencion;
           frequency[key] = (frequency[key] || 0) + 1;
         });
-        
+
         // Insertar cada registro en una fila
         filteredRecords.forEach(record => {
           const tr = document.createElement("tr");
           const key = record.claveAcceso + "|" + record.tipoRetencion;
-          const claveStyle = frequency[key] > 1 ? "mso-number-format:'\\@'; background-color:#ffdddd;" : "mso-number-format:'\\@';";
-          let actionButtons = `<button onclick="verDetalle('${encodeURIComponent(JSON.stringify(record))}')">Ver Detalles</button>`;
+          const claveStyle = frequency[key] > 1 ? "background-color:#fecaca;" : "";
+          let actionButtons = `<div class="actions-cell">
+                                <button onclick="verDetalle('${encodeURIComponent(JSON.stringify(record))}')">Ver Detalles</button>`;
           // Si hay duplicados, se ofrecen opciones adicionales.
           if (frequency[key] > 1) {
-            actionButtons += ` <button onclick="compareRecords('${key}')">Comparar</button>`;
-            actionButtons += ` <button onclick="uniqueRecord('${key}')">Conservar Único</button>`;
+            actionButtons += ` <button class="secondary" onclick="compareRecords('${key}')">Comparar</button>`;
+            actionButtons += ` <button class="warning" onclick="uniqueRecord('${key}')">Conservar Único</button>`;
           }
+          actionButtons += `</div>`;
           tr.innerHTML = `
             <td>${record.noDocumento}</td>
             <td style="${claveStyle}">${record.claveAcceso}</td>
             <td>${record.fechaEmision}</td>
             <td>${record.ruc}</td>
+            <td>${record.razonSocial}</td>
             <td class="numeric">${formatNumber(record.baseImponible)}</td>
             <td class="numeric">${record.porcentajeRetener}</td>
             <td class="numeric">${formatNumber(record.valorRetenido)}</td>
@@ -165,7 +301,7 @@
         });
         updateTotals(filteredRecords);
       }
-      
+
       /* Muestra en detalle los datos de un registro en un alert */
       function verDetalle(recordStr) {
         const record = JSON.parse(decodeURIComponent(recordStr));
@@ -182,7 +318,7 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
         `;
         alert(detalle);
       }
-      
+
       /* Compara registros duplicados para una combinación dada y muestra un resumen */
       function compareRecords(key) {
         const duplicates = allRecords.filter(rec => (rec.claveAcceso + "|" + rec.tipoRetencion) === key);
@@ -200,7 +336,7 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
         });
         alert(mensaje);
       }
-      
+
       /* Conserva únicamente el primer registro de una combinación duplicada */
       function uniqueRecord(key) {
         if (confirm("Se eliminarán los registros duplicados para esta combinación y se conservará solo el primero. ¿Desea continuar?")) {
@@ -213,7 +349,7 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
           renderTable();
         }
       }
-      
+
       /* Elimina todos los duplicados de la tabla dejando solo la primera ocurrencia de cada combinación */
       function eliminarDuplicados() {
         if (confirm("Se eliminarán todos los registros duplicados, conservándose solo la primera ocurrencia de cada combinación (Clave de Acceso y Tipo de Retención). ¿Desea continuar?")) {
@@ -231,10 +367,10 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
           alert("Duplicados eliminados. Se ha conservado solo el primer registro de cada combinación.");
         }
       }
-      
+
       // Actualiza la tabla cuando se cambia el filtro
       document.getElementById("filterSelect").addEventListener("change", renderTable);
-      
+
       /* Manejador para cargar y procesar los archivos XML */
       document.getElementById("fileInput").addEventListener("change", function (event) {
         const files = event.target.files;
@@ -242,10 +378,10 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
           alert("Selecciona al menos un archivo XML.");
           return;
         }
-        
+
         // Reinicia el arreglo de registros
         allRecords = [];
-        
+
         Array.from(files).forEach(file => {
           const reader = new FileReader();
           reader.onload = function (e) {
@@ -253,7 +389,7 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
               const parser = new DOMParser();
               const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
               console.log("Documento XML leído:", xmlDoc);
-              
+
               // Obtener el contenido del nodo <comprobante> (dentro de CDATA)
               let comprobanteCDATAText = xmlDoc.getElementsByTagName("comprobante")[0]?.textContent;
               if (!comprobanteCDATAText) {
@@ -263,13 +399,13 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
               comprobanteCDATAText = comprobanteCDATAText.trim();
               const retencionXML = parser.parseFromString(comprobanteCDATAText, "text/xml");
               console.log("Contenido CDATA parseado:", retencionXML);
-              
+
               const comprobanteRetencion = retencionXML.getElementsByTagName("comprobanteRetencion")[0];
               if (!comprobanteRetencion) {
                 alert(`El archivo ${file.name} no contiene un comprobanteRetencion válido.`);
                 return;
               }
-              
+
               // Extraer datos generales
               const infoTrib = comprobanteRetencion.getElementsByTagName("infoTributaria")[0];
               const estab = infoTrib.getElementsByTagName("estab")[0]?.textContent.trim() || "000";
@@ -279,10 +415,10 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
               const claveAcceso = infoTrib.getElementsByTagName("claveAcceso")[0]?.textContent.trim() || "No disponible";
               const ruc = infoTrib.getElementsByTagName("ruc")[0]?.textContent.trim() || "No disponible";
               const razonSocial = infoTrib.getElementsByTagName("razonSocial")[0]?.textContent.trim() || "No disponible";
-              
+
               const infoComp = comprobanteRetencion.getElementsByTagName("infoCompRetencion")[0];
               const fechaEmision = infoComp.getElementsByTagName("fechaEmision")[0]?.textContent.trim() || "No disponible";
-              
+
               // Extraer registros de impuestos
               const impuestosElem = comprobanteRetencion.getElementsByTagName("impuestos")[0];
               if (!impuestosElem) {
@@ -294,7 +430,7 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
                 alert(`El archivo ${file.name} no tiene registros de impuestos.`);
                 return;
               }
-              
+
               // Procesar cada nodo <impuesto>
               for (let i = 0; i < impuestoNodes.length; i++) {
                 const imp = impuestoNodes[i];
@@ -307,11 +443,11 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
                 } else {
                   tipoRetencion = codigoGeneral;
                 }
-                
+
                 const baseImponible = imp.getElementsByTagName("baseImponible")[0]?.textContent.trim() || "0";
                 const porcentajeRetener = imp.getElementsByTagName("porcentajeRetener")[0]?.textContent.trim() || "No disponible";
                 const valorRetenido = imp.getElementsByTagName("valorRetenido")[0]?.textContent.trim() || "0";
-                
+
                 const record = {
                   noDocumento,
                   claveAcceso,
@@ -334,7 +470,7 @@ Valor Retenido: ${formatNumber(record.valorRetenido)}
           reader.readAsText(file);
         });
       });
-      
+
       /* Función para exportar la tabla a Excel */
       function exportTableToExcel(tableID, filename = "") {
         var downloadLink;
