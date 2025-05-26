@@ -1,311 +1,105 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Visor de Retenciones con Filtro, Detalle, Eliminación de Duplicados y Exportación a Excel</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<head>
+    <meta charset="UTF-8">
+    <title>Visor de Retenciones con Filtro y Eliminación de Duplicados</title>
     <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        margin: 20px;
-        background-color: #f3f4f6;
-        color: #1f2937;
-      }
-      h2 {
-        margin-top: 0;
-        margin-bottom: 20px;
-        color: #4b5563;
-        font-weight: 600;
-      }
-      .controls {
-        margin-bottom: 20px;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 16px;
-      }
-      .controls label {
-        font-weight: 500;
-        color: #6b7280;
-      }
-      .controls select,
-      .controls input[type="file"] {
-        padding: 8px;
-        border: 1px solid #d1d5db;
-        border-radius: 0.375rem;
-        font-size: 0.9rem;
-        box-shadow: none;
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        background-color: white;
-        font-family: 'Inter', sans-serif;
-      }
-      .controls select:focus,
-      .controls input[type="file"]:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-      }
-      .controls button {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 0.375rem;
-        font-size: 0.9rem;
-        font-weight: 500;
-        cursor: pointer;
-        color: white;
-        background-color: #3b82f6;
-        transition: background-color 0.15s ease-in-out, transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        font-family: 'Inter', sans-serif;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      }
-      .controls button:hover {
-        background-color: #2563eb;
-        transform: translateY(-1px);
-        box-shadow: 0 3px 7px rgba(0, 0, 0, 0.15);
-      }
-      .controls button:active {
-        background-color: #1e40af;
-        transform: translateY(0);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-      }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        margin-top: 20px;
-        border-radius: 0.5rem;
-        overflow: hidden;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      }
-      th,
-      td {
-        border: 1px solid #e5e7eb;
-        padding: 10px 12px;
-        text-align: left;
-        font-size: 0.85rem;
-        color: #374151;
-      }
-      th {
-        background-color: #f9fafb;
-        font-weight: 600;
-        color: #4b5563;
-      }
-      tbody tr:nth-child(odd) {
-        background-color: white;
-      }
-      tbody tr:nth-child(even) {
-        background-color: #f7fafc;
-      }
-      tbody tr:hover {
-        background-color: #eff6ff;
-      }
-      .numeric {
-        text-align: right;
-      }
-      tfoot {
-        background-color: #f9fafb;
-        font-weight: 600;
-        color: #4b5563;
-      }
-      tfoot th,
-      tfoot td {
-        border-top: 2px solid #d1d5db;
-        padding: 10px 12px;
-      }
-      .export-button,
-      .unique-button {
-        margin-top: 20px;
-      }
-      .duplicate-cell {
-        background-color: #fecaca;
-        color: #b91c1c;
-      }
-      .actions-cell {
-        display: flex;
-        gap: 6px;
-      }
-      .actions-cell button {
-        padding: 6px 10px;
-        border: none;
-        border-radius: 0.375rem;
-        font-size: 0.8rem;
-        cursor: pointer;
-        color: white;
-        background-color: #3b82f6;
-        transition: background-color 0.15s ease-in-out, transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        font-family: 'Inter', sans-serif;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      }
-      .actions-cell button:hover {
-        background-color: #2563eb;
-        transform: translateY(-1px);
-        box-shadow: 0 3px 7px rgba(0, 0, 0, 0.15);
-      }
-      .actions-cell button:active {
-        background-color: #1e40af;
-        transform: translateY(0);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-      }
-      .actions-cell button.warning {
-        background-color: #dc2626;
-      }
-      .actions-cell button.warning:hover {
-        background-color: #b91c1c;
-      }
-      .actions-cell button.secondary {
-        background-color: #6b7280;
-      }
-      .actions-cell button.secondary:hover {
-        background-color: #4b5563;
-      }
-      .header-section {
-        background-color: #003366; /* Azul oscuro similar al del SRI */
-        padding: 10px 0;
-        margin-bottom: 20px;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-      .header-section h2 {
-        color: white;
-        margin: 0;
-        font-size: 1.85rem;
-        font-weight: 600;
-      }
-
-      @media (max-width: 768px) {
-        .controls {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 16px;
-        }
-        .controls button {
-          margin-top: 0;
-        }
-        .header-section h2 {
-          font-size: 1.2rem;
-        }
-      }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 8px; }
+        th { background-color: #f4f4f4; }
+        .numeric { text-align: right; }
     </style>
-  </head>
-  <body>
-    <div class="header-section">
-      <h2>Visor de Retenciones con Filtro, Detalle y Eliminación de Duplicados (y Exportación a Excel)</h2>
-    </div>
-    <div class="controls">
-      <label for="filterSelect"><strong>Mostrar:</strong></label>
-      <select id="filterSelect">
+</head>
+<body>
+
+<h2>Visor de Retenciones</h2>
+
+<div>
+    <label for="filterSelect">Mostrar:</label>
+    <select id="filterSelect">
         <option value="Todos">Todos</option>
         <option value="RET IVA">RET IVA</option>
         <option value="RET FUENTE">RET FUENTE</option>
-      </select>
-      <input type="file" id="fileInput" multiple />
-      <button class="export-button" onclick="exportTableToExcel('invoicesTable', 'retenciones_export')">
-        Exportar a Excel
-      </button>
-      <button class="unique-button" onclick="eliminarDuplicados()">
-        Eliminar Duplicados
-      </button>
-    </div>
+    </select>
+    <input type="file" id="fileInput" multiple />
+    <button onclick="exportTableToExcel()">Exportar a Excel</button>
+    <button onclick="eliminarDuplicados()">Eliminar Duplicados</button>
+</div>
 
-    <table id="invoicesTable">
-      <thead>
+<table id="invoicesTable">
+    <thead>
         <tr>
-          <th>No.</th>
-          <th>Clave de Acceso</th>
-          <th>Fecha de Emisión</th>
-          <th>RUC</th>
-          <th>Razón Social</th>
-          <th class="numeric">Base Imponible</th>
-          <th class="numeric">Porcentaje Retener</th>
-          <th class="numeric">Valor Retenido</th>
-          <th>Acciones</th>
+            <th>No.</th>
+            <th>Clave de Acceso</th>
+            <th>Fecha de Emisión</th>
+            <th>RUC</th>
+            <th>Razón Social</th>
+            <th class="numeric">Base Imponible</th>
+            <th class="numeric">Porcentaje Retener</th>
+            <th class="numeric">Valor Retenido</th>
+            <th>Acciones</th>
         </tr>
-      </thead>
-      <tbody>
-        </tbody>
-      <tfoot>
+    </thead>
+    <tbody></tbody>
+    <tfoot>
         <tr>
-          <th colspan="4">Totales:</th>
-          <th class="numeric" id="baseImponibleAcum">0.00</th>
-          <th></th>
-          <th class="numeric" id="valorRetenidoAcum">0.00</th>
-          <th></th>
+            <th colspan="5">Totales:</th>
+            <th class="numeric" id="baseImponibleAcum">0.00</th>
+            <th></th>
+            <th class="numeric" id="valorRetenidoAcum">0.00</th>
+            <th></th>
         </tr>
-      </tfoot>
-    </table>
-    <script>
-      /* Función para formatear números a dos decimales */
-      function formatNumber(val) {
-        const num = Number(val);
-        return isNaN(num) ? "0.00" : num.toFixed(2);
-      }
+    </tfoot>
+</table>
 
-      // Arreglo global para almacenar todos los registros extraídos del XML.
-      let allRecords = [];
+<script>
+    let allRecords = [];
 
-      /* Actualiza los totales de Base Imponible y Valor Retenido en función de los registros filtrados */
-      function updateTotals(records) {
+    function formatNumber(val) {
+        return Number(val).toFixed(2);
+    }
+
+    function updateTotals(records) {
         let totalBase = 0;
         let totalValor = 0;
         records.forEach(record => {
-          const baseNum = parseFloat(record.baseImponible);
-          if (!isNaN(baseNum)) totalBase += baseNum;
-          const valorNum = parseFloat(record.valorRetenido);
-          if (!isNaN(valorNum)) totalValor += valorNum;
+            totalBase += parseFloat(record.baseImponible) || 0;
+            totalValor += parseFloat(record.valorRetenido) || 0;
         });
         document.getElementById("baseImponibleAcum").textContent = formatNumber(totalBase);
         document.getElementById("valorRetenidoAcum").textContent = formatNumber(totalValor);
-      }
+    }
 
-      /* Renderiza la tabla según el filtro y resalta celdas duplicadas */
-      function renderTable() {
+    function renderTable() {
         const tbody = document.querySelector("#invoicesTable tbody");
         tbody.innerHTML = "";
         const filterValue = document.getElementById("filterSelect").value;
-        const filteredRecords = allRecords.filter(record => {
-          return (filterValue === "Todos") || (record.tipoRetencion === filterValue);
-        });
+        const filteredRecords = allRecords.filter(record => filterValue === "Todos" || record.tipoRetencion === filterValue);
 
-        // Calcular la frecuencia de cada combinación (claveAcceso + tipoRetencion)
-        const frequency = {};
         filteredRecords.forEach(record => {
-          const key = record.claveAcceso + "|" + record.tipoRetencion;
-          frequency[key] = (frequency[key] || 0) + 1;
-        });
-
-        // Insertar cada registro en una fila
-        filteredRecords.forEach(record => {
-          const tr = document.createElement("tr");
-          const key = record.claveAcceso + "|" + record.tipoRetencion;
-          const claveStyle = frequency[key] > 1 ? "background-color:#fecaca;" : "";
-          let actionButtons = `<div class="actions-cell">
-                                <button onclick="verDetalle('${encodeURIComponent(JSON.stringify(record))}')">Ver Detalles</button>`;
-          // Si hay duplicados, se ofrecen opciones adicionales.
-          if (frequency[key] > 1) {
-            actionButtons += ` <button class="secondary" onclick="compareRecords('${key}')">Comparar</button>`;
-            actionButtons += ` <button class="warning" onclick="uniqueRecord('${key}')">Conservar Único</button>`;
-          }
-          actionButtons += `</div>`;
-          tr.innerHTML = `
-            <td>${record.noDocumento}</td>
-            <td style="${claveStyle}">${record.claveAcceso}</td>
-            <td>${record.fechaEmision}</td>
-            <td>${record.ruc}</td>
-            <td>${record.razonSocial}</td>
-            <td class="numeric">${formatNumber(record.baseImponible)}</td>
-            <td class="numeric">${record.porcentajeRetener}</td>
-            <td class="numeric">${formatNumber(record.valorRetenido)}</td>
-            <td>${actionButtons}</td>
-          `;
-          tbody.appendChild(tr);
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${record.noDocumento}</td>
+                <td>${record.claveAcceso}</td>
+                <td>${record.fechaEmision}</td>
+                <td>${record.ruc}</td>
+                <td>${record.razonSocial}</td>
+                <td class="numeric">${formatNumber(record.baseImponible)}</td>
+                <td class="numeric">${record.porcentajeRetener}</td>
+                <td class="numeric">${formatNumber(record.valorRetenido)}</td>
+                <td>
+                    <button onclick="verDetalle('${encodeURIComponent(JSON.stringify(record))}')">Detalles</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
         });
         updateTotals(filteredRecords);
-      }
+    }
 
-      /* Muestra en detalle los datos de un registro en un alert */
-      function verDetalle(recordStr) {
+    function verDetalle(recordStr) {
         const record = JSON.parse(decodeURIComponent(recordStr));
-        const detalle = `
+        alert(`
 Detalles de Retención:
 No.: ${record.noDocumento}
 Clave de Acceso: ${record.claveAcceso}
@@ -315,180 +109,59 @@ Razón Social: ${record.razonSocial}
 Base Imponible: ${formatNumber(record.baseImponible)}
 Porcentaje Retener: ${record.porcentajeRetener}
 Valor Retenido: ${formatNumber(record.valorRetenido)}
-        `;
-        alert(detalle);
-      }
+Documento Sustento: ${record.numDocSustento || 'No disponible'}
+Fecha Emisión Sustento: ${record.fechaEmisionDocSustento || 'No disponible'}
+        `);
+    }
 
-      /* Compara registros duplicados para una combinación dada y muestra un resumen */
-      function compareRecords(key) {
-        const duplicates = allRecords.filter(rec => (rec.claveAcceso + "|" + rec.tipoRetencion) === key);
-        let mensaje = `Se han encontrado ${duplicates.length} registros duplicados para:\n\n`;
-        mensaje += `Clave de Acceso: ${duplicates[0].claveAcceso}\nTipo de Retención: ${duplicates[0].tipoRetencion}\n\n`;
-        duplicates.forEach((rec, idx) => {
-          mensaje += `Registro ${idx + 1}:\n`;
-          mensaje += `  No.: ${rec.noDocumento}\n`;
-          mensaje += `  Fecha de Emisión: ${rec.fechaEmision}\n`;
-          mensaje += `  RUC: ${rec.ruc}\n`;
-          mensaje += `  Razón Social: ${rec.razonSocial}\n`;
-          mensaje += `  Base Imponible: ${formatNumber(rec.baseImponible)}\n`;
-          mensaje += `  Porcentaje Retener: ${rec.porcentajeRetener}\n`;
-          mensaje += `  Valor Retenido: ${formatNumber(rec.valorRetenido)}\n\n`;
-        });
-        alert(mensaje);
-      }
-
-      /* Conserva únicamente el primer registro de una combinación duplicada */
-      function uniqueRecord(key) {
-        if (confirm("Se eliminarán los registros duplicados para esta combinación y se conservará solo el primero. ¿Desea continuar?")) {
-          allRecords = allRecords.filter((rec, index, arr) => {
-            if ((rec.claveAcceso + "|" + rec.tipoRetencion) === key) {
-              return arr.findIndex(x => (x.claveAcceso + "|" + x.tipoRetencion) === key) === index;
-            }
-            return true;
-          });
-          renderTable();
-        }
-      }
-
-      /* Elimina todos los duplicados de la tabla dejando solo la primera ocurrencia de cada combinación */
-      function eliminarDuplicados() {
-        if (confirm("Se eliminarán todos los registros duplicados, conservándose solo la primera ocurrencia de cada combinación (Clave de Acceso y Tipo de Retención). ¿Desea continuar?")) {
-          const seen = {};
-          allRecords = allRecords.filter(rec => {
+    function eliminarDuplicados() {
+        const seen = {};
+        allRecords = allRecords.filter(rec => {
             const key = rec.claveAcceso + "|" + rec.tipoRetencion;
-            if (seen[key]) {
-              return false;
-            } else {
-              seen[key] = true;
-              return true;
-            }
-          });
-          renderTable();
-          alert("Duplicados eliminados. Se ha conservado solo el primer registro de cada combinación.");
-        }
-      }
+            return seen[key] ? false : (seen[key] = true);
+        });
+        renderTable();
+        alert("Duplicados eliminados.");
+    }
 
-      // Actualiza la tabla cuando se cambia el filtro
-      document.getElementById("filterSelect").addEventListener("change", renderTable);
+    document.getElementById("filterSelect").addEventListener("change", renderTable);
 
-      /* Manejador para cargar y procesar los archivos XML */
-      document.getElementById("fileInput").addEventListener("change", function (event) {
+    document.getElementById("fileInput").addEventListener("change", function (event) {
         const files = event.target.files;
         if (files.length === 0) {
-          alert("Selecciona al menos un archivo XML.");
-          return;
+            alert("Selecciona al menos un archivo XML.");
+            return;
         }
-
-        // Reinicia el arreglo de registros
         allRecords = [];
-
         Array.from(files).forEach(file => {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            try {
-              const parser = new DOMParser();
-              const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
-              console.log("Documento XML leído:", xmlDoc);
-
-              // Obtener el contenido del nodo <comprobante> (dentro de CDATA)
-              let comprobanteCDATAText = xmlDoc.getElementsByTagName("comprobante")[0]?.textContent;
-              if (!comprobanteCDATAText) {
-                alert(`El archivo ${file.name} no contiene información en CDATA.`);
-                return;
-              }
-              comprobanteCDATAText = comprobanteCDATAText.trim();
-              const retencionXML = parser.parseFromString(comprobanteCDATAText, "text/xml");
-              console.log("Contenido CDATA parseado:", retencionXML);
-
-              const comprobanteRetencion = retencionXML.getElementsByTagName("comprobanteRetencion")[0];
-              if (!comprobanteRetencion) {
-                alert(`El archivo ${file.name} no contiene un comprobanteRetencion válido.`);
-                return;
-              }
-
-              // Extraer datos generales
-              const infoTrib = comprobanteRetencion.getElementsByTagName("infoTributaria")[0];
-              const estab = infoTrib.getElementsByTagName("estab")[0]?.textContent.trim() || "000";
-              const ptoEmi = infoTrib.getElementsByTagName("ptoEmi")[0]?.textContent.trim() || "000";
-              const secuencial = infoTrib.getElementsByTagName("secuencial")[0]?.textContent.trim() || "000000000";
-              const noDocumento = `${estab}-${ptoEmi}-${secuencial}`;
-              const claveAcceso = infoTrib.getElementsByTagName("claveAcceso")[0]?.textContent.trim() || "No disponible";
-              const ruc = infoTrib.getElementsByTagName("ruc")[0]?.textContent.trim() || "No disponible";
-              const razonSocial = infoTrib.getElementsByTagName("razonSocial")[0]?.textContent.trim() || "No disponible";
-
-              const infoComp = comprobanteRetencion.getElementsByTagName("infoCompRetencion")[0];
-              const fechaEmision = infoComp.getElementsByTagName("fechaEmision")[0]?.textContent.trim() || "No disponible";
-
-              // Extraer registros de impuestos
-              const impuestosElem = comprobanteRetencion.getElementsByTagName("impuestos")[0];
-              if (!impuestosElem) {
-                alert(`El archivo ${file.name} no contiene la sección de impuestos.`);
-                return;
-              }
-              const impuestoNodes = impuestosElem.getElementsByTagName("impuesto");
-              if (impuestoNodes.length === 0) {
-                alert(`El archivo ${file.name} no tiene registros de impuestos.`);
-                return;
-              }
-
-              // Procesar cada nodo <impuesto>
-              for (let i = 0; i < impuestoNodes.length; i++) {
-                const imp = impuestoNodes[i];
-                const codigoGeneral = imp.getElementsByTagName("codigo")[0]?.textContent.trim() || "";
-                let tipoRetencion = "";
-                if (codigoGeneral === "2") {
-                  tipoRetencion = "RET IVA";
-                } else if (codigoGeneral === "1") {
-                  tipoRetencion = "RET FUENTE";
-                } else {
-                  tipoRetencion = codigoGeneral;
-                }
-
-                const baseImponible = imp.getElementsByTagName("baseImponible")[0]?.textContent.trim() || "0";
-                const porcentajeRetener = imp.getElementsByTagName("porcentajeRetener")[0]?.textContent.trim() || "No disponible";
-                const valorRetenido = imp.getElementsByTagName("valorRetenido")[0]?.textContent.trim() || "0";
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+                const comprobanteCDATAText = xmlDoc.getElementsByTagName("comprobante")[0]?.textContent.trim();
+                const retencionXML = parser.parseFromString(comprobanteCDATAText, "text/xml");
+                const infoTrib = retencionXML.getElementsByTagName("infoTributaria")[0];
+                const infoComp = retencionXML.getElementsByTagName("infoCompRetencion")[0];
 
                 const record = {
-                  noDocumento,
-                  claveAcceso,
-                  fechaEmision,
-                  tipoRetencion,
-                  ruc,
-                  razonSocial,
-                  baseImponible,
-                  porcentajeRetener,
-                  valorRetenido
+                    noDocumento: infoTrib.getElementsByTagName("secuencial")[0]?.textContent.trim(),
+                    claveAcceso: infoTrib.getElementsByTagName("claveAcceso")[0]?.textContent.trim(),
+                    fechaEmision: infoComp.getElementsByTagName("fechaEmision")[0]?.textContent.trim(),
+                    ruc: infoTrib.getElementsByTagName("ruc")[0]?.textContent.trim(),
+                    razonSocial: infoTrib.getElementsByTagName("razonSocial")[0]?.textContent.trim(),
+                    baseImponible: infoComp.getElementsByTagName("baseImponible")[0]?.textContent.trim(),
+                    porcentajeRetener: infoComp.getElementsByTagName("porcentajeRetener")[0]?.textContent.trim(),
+                    valorRetenido: infoComp.getElementsByTagName("valorRetenido")[0]?.textContent.trim(),
+                    numDocSustento: infoComp.getElementsByTagName("numDocSustento")[0]?.textContent.trim(),
+                    fechaEmisionDocSustento: infoComp.getElementsByTagName("fechaEmisionDocSustento")[0]?.textContent.trim()
                 };
-                allRecords.push(record);
-              }
-              renderTable();
-            } catch (error) {
-              console.error("Error al procesar " + file.name, error);
-              alert("Ocurrió un error al procesar " + file.name);
-            }
-          };
-          reader.readAsText(file);
-        });
-      });
 
-      /* Función para exportar la tabla a Excel */
-      function exportTableToExcel(tableID, filename = "") {
-        var downloadLink;
-        var dataType = "application/vnd.ms-excel";
-        var tableSelect = document.getElementById(tableID);
-        var tableHTML = tableSelect.outerHTML.replace(/ /g, "%20");
-        filename = filename ? filename + ".xls" : "export_data.xls";
-        downloadLink = document.createElement("a");
-        document.body.appendChild(downloadLink);
-        if (navigator.msSaveOrOpenBlob) {
-          var blob = new Blob(["\ufeff", tableHTML], { type: dataType });
-          navigator.msSaveOrOpenBlob(blob, filename);
-        } else {
-          downloadLink.href = "data:" + dataType + ", " + tableHTML;
-          downloadLink.download = filename;
-          downloadLink.click();
-        }
-      }
-    </script>
-  </body>
+                allRecords.push(record);
+                renderTable();
+            };
+            reader.readAsText(file);
+        });
+    });
+</script>
+</body>
 </html>
