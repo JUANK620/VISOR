@@ -2,166 +2,806 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Visor de Retenciones con Filtro y Eliminación de Duplicados</title>
+    <title>Visor de Retenciones</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ccc; padding: 8px; }
-        th { background-color: #f4f4f4; }
-        .numeric { text-align: right; }
+        /* Variables de color para facilidad de mantenimiento */
+        :root {
+            --primary-blue: #004d80; /* Azul oscuro SRI */
+            --light-blue: #e0f2f7; /* Azul claro para fondos o hover */
+            --accent-blue: #007bff; /* Azul para enlaces/botones */
+            --text-color: #333;
+            --border-color: #ddd;
+            --header-bg: #f8f9fa;
+            --table-header-bg: #f0f0f0;
+            --button-bg: #007bff;
+            --button-hover-bg: #0056b3;
+            --danger-bg: #dc3545;
+            --danger-hover-bg: #bd2130;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            background-color: #f4f7f6; /* Fondo general más suave */
+            color: var(--text-color);
+        }
+
+        /* Contenido principal, ahora sin sidebar */
+        .main-content {
+            padding: 20px; /* Reducido para dejar más espacio al header */
+        }
+
+        /* Nueva barra superior simplificada */
+        .top-bar {
+            background-color: var(--primary-blue);
+            height: 5px; /* Línea azul pequeña */
+            width: 100%;
+        }
+
+        .header-sri {
+            background-color: white;
+            padding: 15px 30px; /* Reducido el padding vertical */
+            margin-bottom: 20px; /* Menos margen inferior */
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-sri h1 {
+            font-size: 1.6em; /* Un poco más pequeño */
+            color: var(--primary-blue);
+            margin: 0;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Espacio entre los elementos */
+        }
+
+        .header-info .contact-info {
+            font-size: 0.85em; /* Tamaño más pequeño para que no sea muy llamativo */
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .header-info .contact-info a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .header-info .contact-info a:hover {
+            text-decoration: underline;
+        }
+
+        .header-info .contact-info img {
+            height: 18px; /* Tamaño del logo */
+            vertical-align: middle;
+            opacity: 0.7; /* Para que no sea muy llamativo */
+            transition: opacity 0.3s ease;
+        }
+
+        .header-info .contact-info img:hover {
+            opacity: 1;
+        }
+
+        /* Controles de filtro y archivo */
+        .controls {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .controls label {
+            font-weight: bold;
+            margin-right: 5px;
+            color: var(--primary-blue);
+        }
+
+        .controls select,
+        .controls input[type="file"] {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .controls button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            color: white;
+            background-color: var(--button-bg);
+        }
+
+        .controls button:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+        /* Estilo específico para el botón de eliminar duplicados */
+        .controls button.delete-btn {
+            background-color: var(--danger-bg);
+        }
+        .controls button.delete-btn:hover {
+            background-color: var(--danger-hover-bg);
+        }
+
+        /* Tabla de resultados */
+        .table-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow-x: auto; /* Para tablas grandes */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.85em;
+        }
+
+        th, td {
+            border: 1px solid #e9ecef;
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--table-header-bg);
+            color: var(--primary-blue);
+            font-weight: bold;
+            white-space: nowrap; /* Evita que los encabezados se envuelvan */
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #fbfcfd; /* Ligero sombreado en filas pares */
+        }
+
+        tbody tr:hover {
+            background-color: var(--light-blue);
+        }
+
+        .numeric {
+            text-align: right;
+        }
+
+        .button-group button {
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background-color 0.2s ease;
+            margin-right: 5px;
+        }
+
+        .button-group button:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+        /* Totales de la tabla */
+        tfoot th {
+            text-align: right;
+            font-weight: bold;
+            background-color: var(--table-header-bg);
+            border-top: 2px solid var(--primary-blue);
+            padding-top: 12px;
+        }
+
+        tfoot td {
+            border-top: 2px solid var(--primary-blue);
+            font-weight: bold;
+            padding-top: 12px;
+        }
+
+        /* Ocultar el input de archivo por defecto y estilizar el botón */
+        #fileInput {
+            display: none;
+        }
+        .custom-file-upload {
+            border: 1px solid var(--border-color);
+            display: inline-block;
+            padding: 8px 12px;
+            cursor: pointer;
+            background-color: white;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--text-color);
+            transition: background-color 0.2s ease;
+        }
+        .custom-file-upload:hover {
+            background-color: #f0f0f0;
+        }
+
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
+    <div class="top-bar"></div> <div class="main-content">
+        <div class="header-sri">
+            <h1>Comprobantes Electrónicos Recibidos</h1>
+            <div class="header-info">
+                <span>Bienvenido, Usuario</span>
+                <div class="contact-info">
+                    <img src="Sin%20t%C3%ADtulo.jpg" alt="Tu Logo" style="height: 20px; vertical-align: middle;">
+                    <a href="https://wa.me/593961200472" target="_blank">Contáctanos: 0961200472</a>
+                </div>
+            </div>
+        </div>
 
-<h2>Visor de Retenciones</h2>
+        <div class="controls">
+            <div>
+                <label for="filterSelect">Mostrar Tipo Retención:</label>
+                <select id="filterSelect">
+                    <option value="Todos">Todos</option>
+                    <option value="RET IVA">RET IVA</option>
+                    <option value="RET FUENTE">RET FUENTE</option>
+                </select>
+            </div>
+            <div>
+                <label for="fileInput" class="custom-file-upload">
+                    Seleccionar Archivos XML
+                </label>
+                <input type="file" id="fileInput" multiple accept=".xml" />
+            </div>
+            <div>
+                <button onclick="exportTableToExcel()">Exportar a Excel</button>
+                <button onclick="eliminarDuplicados()" class="delete-btn">Eliminar Duplicados</button>
+            </div>
+        </div>
 
-<div>
-    <label for="filterSelect">Mostrar:</label>
-    <select id="filterSelect">
-        <option value="Todos">Todos</option>
-        <option value="RET IVA">RET IVA</option>
-        <option value="RET FUENTE">RET FUENTE</option>
-    </select>
-    <input type="file" id="fileInput" multiple />
-    <button onclick="exportTableToExcel()">Exportar a Excel</button>
-    <button onclick="eliminarDuplicados()">Eliminar Duplicados</button>
-</div>
+        <div class="table-container">
+            <table id="invoicesTable">
+                <thead>
+                    <tr>
+                        <th>No. Documento</th> <th>Clave de Acceso</th>
+                        <th>Tipo Retención</th>
+                        <th>Fecha de Emisión</th>
+                        <th>RUC</th>
+                        <th>Razón Social</th>
+                        <th class="numeric">Base Imponible</th>
+                        <th class="numeric">Porcentaje Retener</th>
+                        <th class="numeric">Valor Retenido</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="6">Totales:</th>
+                        <th class="numeric" id="baseImponibleAcum">0.00</th>
+                        <th></th>
+                        <th class="numeric" id="valorRetenidoAcum">0.00</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
 
-<table id="invoicesTable">
-    <thead>
-        <tr>
-            <th>No.</th>
-            <th>Clave de Acceso</th>
-            <th>Fecha de Emisión</th>
-            <th>RUC</th>
-            <th>Razón Social</th>
-            <th class="numeric">Base Imponible</th>
-            <th class="numeric">Porcentaje Retener</th>
-            <th class="numeric">Valor Retenido</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody></tbody>
-    <tfoot>
-        <tr>
-            <th colspan="5">Totales:</th>
-            <th class="numeric" id="baseImponibleAcum">0.00</th>
-            <th></th>
-            <th class="numeric" id="valorRetenidoAcum">0.00</th>
-            <th></th>
-        </tr>
-    </tfoot>
-</table>
+    <script>
+        const { jsPDF } = window.jspdf;
 
-<script>
-    let allRecords = [];
+        let fullXmlRecords = {}; // claveAcceso -> { commonFields, retenciones: [], originalXmlContent: "..." }
+        let allRecordsForTable = [];
 
-    function formatNumber(val) {
-        return Number(val).toFixed(2);
-    }
+        function formatNumber(val) {
+            return Number(val).toFixed(2);
+        }
 
-    function updateTotals(records) {
-        let totalBase = 0;
-        let totalValor = 0;
-        records.forEach(record => {
-            totalBase += parseFloat(record.baseImponible) || 0;
-            totalValor += parseFloat(record.valorRetenido) || 0;
-        });
-        document.getElementById("baseImponibleAcum").textContent = formatNumber(totalBase);
-        document.getElementById("valorRetenidoAcum").textContent = formatNumber(totalValor);
-    }
+        // Función para formatear el número de documento a 00X-00X-000000XXXX
+        function formatDocumentNumber(estab, ptoEmi, secuencial) {
+            const paddedEstab = String(estab).padStart(3, '0');
+            const paddedPtoEmi = String(ptoEmi).padStart(3, '0');
+            const paddedSecuencial = String(secuencial).padStart(9, '0'); // Secuencial suele ser 9 dígitos
+            return `${paddedEstab}-${paddedPtoEmi}-${paddedSecuencial}`;
+        }
 
-    function renderTable() {
-        const tbody = document.querySelector("#invoicesTable tbody");
-        tbody.innerHTML = "";
-        const filterValue = document.getElementById("filterSelect").value;
-        const filteredRecords = allRecords.filter(record => filterValue === "Todos" || record.tipoRetencion === filterValue);
+        function updateTotals(records) {
+            let totalBase = 0;
+            let totalValor = 0;
+            records.forEach(record => {
+                totalBase += parseFloat(record.baseImponible) || 0;
+                totalValor += parseFloat(record.valorRetenido) || 0;
+            });
+            document.getElementById("baseImponibleAcum").textContent = formatNumber(totalBase);
+            document.getElementById("valorRetenidoAcum").textContent = formatNumber(totalValor);
+        }
 
-        filteredRecords.forEach(record => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${record.noDocumento}</td>
-                <td>${record.claveAcceso}</td>
-                <td>${record.fechaEmision}</td>
-                <td>${record.ruc}</td>
-                <td>${record.razonSocial}</td>
-                <td class="numeric">${formatNumber(record.baseImponible)}</td>
-                <td class="numeric">${record.porcentajeRetener}</td>
-                <td class="numeric">${formatNumber(record.valorRetenido)}</td>
-                <td>
-                    <button onclick="verDetalle('${encodeURIComponent(JSON.stringify(record))}')">Detalles</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-        updateTotals(filteredRecords);
-    }
+        function renderTable() {
+            const tbody = document.querySelector("#invoicesTable tbody");
+            tbody.innerHTML = "";
+            const filterValue = document.getElementById("filterSelect").value;
+            const filteredRecords = allRecordsForTable.filter(record => filterValue === "Todos" || record.tipoRetencion === filterValue);
 
-    function verDetalle(recordStr) {
-        const record = JSON.parse(decodeURIComponent(recordStr));
-        alert(`
-Detalles de Retención:
-No.: ${record.noDocumento}
-Clave de Acceso: ${record.claveAcceso}
-Fecha de Emisión: ${record.fechaEmision}
-RUC: ${record.ruc}
-Razón Social: ${record.razonSocial}
+            filteredRecords.forEach(record => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${record.formattedDocNumber || ''}</td> <td>${record.claveAcceso || ''}</td>
+                    <td>${record.tipoRetencion || ''}</td>
+                    <td>${record.fechaEmision || ''}</td>
+                    <td>${record.ruc || ''}</td>
+                    <td>${record.razonSocial || ''}</td>
+                    <td class="numeric">${formatNumber(record.baseImponible)}</td>
+                    <td class="numeric">${record.porcentajeRetener || ''}</td>
+                    <td class="numeric">${formatNumber(record.valorRetenido)}</td>
+                    <td>
+                        <div class="button-group">
+                            <button onclick="verDetalle('${encodeURIComponent(JSON.stringify(record))}')">Detalles</button>
+                            <button onclick="generarPdf('${record.claveAcceso}')">PDF</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            updateTotals(filteredRecords);
+        }
+
+        function verDetalle(recordStr) {
+            const record = JSON.parse(decodeURIComponent(recordStr));
+            alert(`Detalles de Retención:
+No. Documento: ${record.formattedDocNumber || 'No disponible'}
+Clave de Acceso: ${record.claveAcceso || 'No disponible'}
+Tipo Retención: ${record.tipoRetencion || 'No disponible'}
+Fecha de Emisión: ${record.fechaEmision || 'No disponible'}
+RUC: ${record.ruc || 'No disponible'}
+Razón Social: ${record.razonSocial || 'No disponible'}
 Base Imponible: ${formatNumber(record.baseImponible)}
-Porcentaje Retener: ${record.porcentajeRetener}
+Porcentaje Retener: ${record.porcentajeRetener || 'No disponible'}
 Valor Retenido: ${formatNumber(record.valorRetenido)}
 Documento Sustento: ${record.numDocSustento || 'No disponible'}
 Fecha Emisión Sustento: ${record.fechaEmisionDocSustento || 'No disponible'}
-        `);
-    }
-
-    function eliminarDuplicados() {
-        const seen = {};
-        allRecords = allRecords.filter(rec => {
-            const key = rec.claveAcceso + "|" + rec.tipoRetencion;
-            return seen[key] ? false : (seen[key] = true);
-        });
-        renderTable();
-        alert("Duplicados eliminados.");
-    }
-
-    document.getElementById("filterSelect").addEventListener("change", renderTable);
-
-    document.getElementById("fileInput").addEventListener("change", function (event) {
-        const files = event.target.files;
-        if (files.length === 0) {
-            alert("Selecciona al menos un archivo XML.");
-            return;
+            `);
         }
-        allRecords = [];
-        Array.from(files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
-                const comprobanteCDATAText = xmlDoc.getElementsByTagName("comprobante")[0]?.textContent.trim();
-                const retencionXML = parser.parseFromString(comprobanteCDATAText, "text/xml");
-                const infoTrib = retencionXML.getElementsByTagName("infoTributaria")[0];
-                const infoComp = retencionXML.getElementsByTagName("infoCompRetencion")[0];
 
-                const record = {
-                    noDocumento: infoTrib.getElementsByTagName("secuencial")[0]?.textContent.trim(),
-                    claveAcceso: infoTrib.getElementsByTagName("claveAcceso")[0]?.textContent.trim(),
-                    fechaEmision: infoComp.getElementsByTagName("fechaEmision")[0]?.textContent.trim(),
-                    ruc: infoTrib.getElementsByTagName("ruc")[0]?.textContent.trim(),
-                    razonSocial: infoTrib.getElementsByTagName("razonSocial")[0]?.textContent.trim(),
-                    baseImponible: infoComp.getElementsByTagName("baseImponible")[0]?.textContent.trim(),
-                    porcentajeRetener: infoComp.getElementsByTagName("porcentajeRetener")[0]?.textContent.trim(),
-                    valorRetenido: infoComp.getElementsByTagName("valorRetenido")[0]?.textContent.trim(),
-                    numDocSustento: infoComp.getElementsByTagName("numDocSustento")[0]?.textContent.trim(),
-                    fechaEmisionDocSustento: infoComp.getElementsByTagName("fechaEmisionDocSustento")[0]?.textContent.trim()
-                };
+        async function generarPdf(claveAcceso) {
+            const fullRecord = fullXmlRecords[claveAcceso];
+            if (!fullRecord) {
+                alert("No se encontraron los datos completos para generar el PDF.");
+                return;
+            }
 
-                allRecords.push(record);
-                renderTable();
+            const doc = new jsPDF();
+            const margin = 10;
+            let yPos = margin;
+            const lineHeightSmall = 3.5;
+            const lineHeightNormal = 5;
+            const fontSizeTiny = 6;
+            const fontSizeSmall = 8;
+            const fontSizeNormal = 9;
+            const fontSizeLarge = 11;
+
+            // --- Estructura del PDF similar al diseño del SRI ---
+
+            // --- COLUMNA DERECHA (RUC y Comprobante de Retención) ---
+            const rightColX = 105;
+            const rightColWidth = 95;
+            const boxHeight1 = 45;
+            
+            doc.rect(rightColX - 5, margin, rightColWidth, boxHeight1);
+
+            doc.setFontSize(fontSizeNormal);
+            doc.setFont("helvetica", "bold");
+            doc.text(`R.U.C.: ${fullRecord.ruc || 'N/D'}`, rightColX, margin + 5);
+            doc.setFontSize(fontSizeLarge);
+            doc.text("COMPROBANTE DE RETENCIÓN", rightColX + rightColWidth / 2, margin + 15, { align: "center" });
+            doc.setFontSize(fontSizeNormal);
+            // Usamos el número de documento formateado para el PDF también
+            doc.text(`No. ${fullRecord.formattedDocNumber || 'N/D'}`, rightColX + rightColWidth / 2, margin + 22, { align: "center" });
+
+            // --- COLUMNA IZQUIERDA (Información de la Empresa) ---
+            const leftColWidth = 90;
+            const leftColY = margin + boxHeight1 + 5;
+            const boxHeight2 = 90;
+            doc.rect(margin, margin, leftColWidth, boxHeight2);
+
+            doc.setFontSize(fontSizeNormal);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${fullRecord.razonSocial || 'Razón Social: No disponible'}`, margin + 2, margin + 5);
+            doc.setFont("helvetica", "normal");
+            
+            let currentLeftY = margin + 5 + lineHeightNormal * 2;
+            
+            const nombreComercialLines = doc.splitTextToSize(`Nombre Comercial: ${fullRecord.nombreComercial || 'No disponible'}`, leftColWidth - 4);
+            nombreComercialLines.forEach(line => {
+                doc.text(line, margin + 2, currentLeftY);
+                currentLeftY += lineHeightSmall;
+            });
+            currentLeftY += lineHeightSmall;
+
+            const dirMatrizLines = doc.splitTextToSize(`Dir Matriz: ${fullRecord.dirMatriz || 'No disponible'}`, leftColWidth - 4);
+            dirMatrizLines.forEach(line => {
+                doc.text(line, margin + 2, currentLeftY);
+                currentLeftY += lineHeightSmall;
+            });
+            currentLeftY += lineHeightSmall;
+
+            const dirSucursalLines = doc.splitTextToSize(`Dir Sucursal: ${fullRecord.dirEstablecimiento || 'No disponible'}`, leftColWidth - 4);
+            dirSucursalLines.forEach(line => {
+                doc.text(line, margin + 2, currentLeftY);
+                currentLeftY += lineHeightSmall;
+            });
+            currentLeftY += lineHeightNormal;
+
+            doc.text(`Contribuyente Especial Nro: ${fullRecord.contribuyenteEspecial || 'No disponible'}`, margin + 2, currentLeftY);
+            currentLeftY += lineHeightNormal;
+            doc.text(`OBLIGADO A LLEVAR CONTABILIDAD: ${fullRecord.obligadoContabilidad || 'No disponible'}`, margin + 2, currentLeftY);
+            currentLeftY += lineHeightNormal;
+            doc.text(`Agente de Retención Resolución No: ${fullRecord.agenteRetencion || 'No disponible'}`, margin + 2, currentLeftY);
+
+            // --- SECCIÓN DERECHA INFERIOR (Autorización y Clave de Acceso) ---
+            const authBoxY = margin + boxHeight1 + 5;
+            const authBoxHeight = boxHeight2 - (margin + boxHeight1 - authBoxY);
+            doc.rect(rightColX - 5, authBoxY, rightColWidth, authBoxHeight);
+
+            let currentRightY = authBoxY + 5;
+            doc.setFontSize(fontSizeNormal);
+            doc.text(`NÚMERO DE AUTORIZACIÓN:`, rightColX, currentRightY);
+            currentRightY += lineHeightNormal;
+            doc.setFontSize(fontSizeSmall);
+            doc.text(`${fullRecord.claveAcceso || 'No disponible'}`, rightColX, currentRightY);
+            currentRightY += lineHeightNormal * 1.5;
+
+            doc.setFontSize(fontSizeNormal);
+            doc.text(`FECHA Y HORA DE AUTORIZACIÓN: ${fullRecord.fechaAutorizacion ? fullRecord.fechaAutorizacion.substring(0, 16) : 'No disponible'}`, rightColX, currentRightY);
+            currentRightY += lineHeightNormal;
+            doc.text(`AMBIENTE: ${fullRecord.ambiente === '1' ? 'PRUEBAS' : (fullRecord.ambiente === '2' ? 'PRODUCCIÓN' : 'N/D')}`, rightColX, currentRightY);
+            currentRightY += lineHeightNormal;
+            doc.text(`EMISIÓN: ${fullRecord.tipoEmision === '1' ? 'NORMAL' : 'N/D'}`, rightColX, currentRightY);
+            currentRightY += lineHeightNormal * 1.5;
+
+            doc.setFontSize(fontSizeNormal);
+            doc.text(`CLAVE DE ACCESO:`, rightColX, currentRightY);
+            currentRightY += lineHeightNormal;
+            doc.setFontSize(fontSizeSmall);
+            doc.text(`${fullRecord.claveAcceso || 'No disponible'}`, rightColX, currentRightY);
+            currentRightY += lineHeightNormal;
+
+            // --- Información del Sujeto Retenido ---
+            yPos = Math.max(margin + boxHeight2 + 5, currentRightY + lineHeightNormal * 2); 
+            // doc.line(margin, yPos, 200, yPos); // COMENTADA
+            yPos += lineHeightNormal * 1.5;
+
+            doc.setFontSize(fontSizeNormal);
+            doc.text(`Razón Social / Nombres y Apellidos: ${fullRecord.razonSocialSujetoRetenido || 'No disponible'}`, margin, yPos);
+            yPos += lineHeightNormal;
+            doc.text(`Identificación: ${fullRecord.identificacionSujetoRetenido || 'No disponible'}`, margin, yPos);
+            yPos += lineHeightNormal;
+            doc.text(`Fecha: ${fullRecord.fechaEmision || 'No disponible'}`, margin, yPos);
+            yPos += lineHeightNormal * 1.5;
+
+            // doc.line(margin, yPos, 200, yPos); // COMENTADA
+
+            // --- Tabla de Retenciones ---
+            const head = [
+                ["Comprobante", "Número", "Fecha Emisión", "Ejercicio Fiscal", "Base Imponible", "Impuesto", "Porcentaje Retención", "Valor Retenido"]
+            ];
+            const body = fullRecord.retenciones.map(ret => [
+                fullRecord.codDocSustento === '01' ? 'FACTURA' : (fullRecord.codDocSustento || 'N/D'),
+                fullRecord.numDocSustento || 'N/D',
+                fullRecord.fechaEmisionDocSustento || 'N/D',
+                fullRecord.periodoFiscal || 'N/D',
+                formatNumber(ret.baseImponible),
+                ret.codigo === "2" ? "IVA" : (ret.codigo === "1" ? "Renta" : "N/D"),
+                ret.porcentajeRetener || 'N/D',
+                formatNumber(ret.valorRetenido)
+            ]);
+
+            doc.autoTable({
+                startY: yPos,
+                head: head,
+                body: body,
+                theme: 'grid',
+                headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontSize: fontSizeSmall, fontStyle: 'bold' },
+                bodyStyles: { fontSize: fontSizeSmall },
+                margin: { left: margin, right: margin },
+                columnStyles: {
+                    4: { halign: 'right' },
+                    7: { halign: 'right' }
+                }
+            });
+
+            yPos = doc.autoTable.previous.finalY + lineHeightNormal * 2;
+
+            // Información Adicional
+            if (fullRecord.email || fullRecord.telefono || fullRecord.infoAdicionalText) {
+                doc.setFontSize(fontSizeNormal);
+                doc.text("Información Adicional:", margin, yPos);
+                yPos += lineHeightNormal;
+                if (fullRecord.email) {
+                    doc.text(`E-MAIL: ${fullRecord.email}`, margin, yPos);
+                    yPos += lineHeightNormal;
+                }
+                if (fullRecord.telefono) {
+                    doc.text(`Teléfono: ${fullRecord.telefono}`, margin, yPos);
+                    yPos += lineHeightNormal;
+                }
+                if (fullRecord.infoAdicionalText) {
+                    doc.text(`Info: ${fullRecord.infoAdicionalText}`, margin, yPos);
+                    yPos += lineHeightNormal;
+                }
+            }
+
+            doc.save(`retencion_${fullRecord.formattedDocNumber || fullRecord.claveAcceso}.pdf`); // Guardar con nombre de documento formateado
+        }
+
+        function eliminarDuplicados() {
+            const seen = new Set();
+            allRecordsForTable = allRecordsForTable.filter(rec => {
+                const key = `${rec.claveAcceso}|${rec.tipoRetencion}`;
+                if (seen.has(key)) {
+                    return false;
+                } else {
+                    seen.add(key);
+                    return true;
+                }
+            });
+            renderTable();
+            alert("Duplicados eliminados.");
+        }
+
+        function exportTableToExcel() {
+            const table = document.getElementById("invoicesTable");
+            
+            let exportTable = '<table>';
+            // Encabezados
+            exportTable += '<thead><tr>';
+            Array.from(table.tHead.rows[0].cells).forEach((th, index) => {
+                // Excluir la columna de Acciones
+                if (th.textContent !== 'Acciones') {
+                    exportTable += `<th>${th.textContent}</th>`;
+                }
+            });
+            exportTable += '</tr></thead>';
+
+            // Cuerpo de la tabla
+            exportTable += '<tbody>';
+            allRecordsForTable.forEach(record => { // Usamos allRecordsForTable para la exportación completa
+                exportTable += '<tr>';
+                exportTable += `<td>${record.formattedDocNumber}</td>`; 
+                // Aplicar el formato de texto directamente en la celda de la Clave de Acceso
+                exportTable += `<td style="mso-number-format:'\@'">${record.claveAcceso}</td>`; // <-- NOTA EL CAMBIO AQUÍ
+                exportTable += `<td>${record.tipoRetencion}</td>`;
+                exportTable += `<td>${record.fechaEmision}</td>`;
+                exportTable += `<td>${record.ruc}</td>`;
+                exportTable += `<td>${record.razonSocial}</td>`;
+                exportTable += `<td class="numeric">${record.baseImponible}</td>`; 
+                exportTable += `<td class="numeric">${record.porcentajeRetener}</td>`;
+                exportTable += `<td class="numeric">${record.valorRetenido}</td>`;
+                exportTable += '</tr>';
+            });
+            exportTable += '</tbody>';
+
+            // Pie de tabla (totales)
+            exportTable += '<tfoot><tr>';
+            Array.from(table.tFoot.rows[0].cells).forEach((tf, index) => {
+                // Las celdas del tfoot también necesitan ser reconstruidas para la exportación.
+                // Asegúrate de que los índices coincidan con las columnas exportadas
+                if (index === 0) { // Celda "Totales:"
+                    exportTable += `<th colspan="6">${tf.textContent}</th>`; // colspan ajustado si las columnas cambian
+                } else if (index === 1) { // Base Imponible (columna 7 original)
+                    exportTable += `<th class="numeric">${document.getElementById("baseImponibleAcum").textContent}</th>`;
+                } else if (index === 2) { // Celda vacía entre bases y retenido (columna 8 original)
+                     exportTable += `<th></th>`;
+                } else if (index === 3) { // Valor Retenido (columna 9 original)
+                     exportTable += `<th class="numeric">${document.getElementById("valorRetenidoAcum").textContent}</th>`;
+                }
+                // La columna de Acciones (índice 9) se omite aquí, por lo que no hay un else if para ella.
+            });
+            exportTable += '</tr></tfoot>';
+            exportTable += '</table>';
+
+
+            const uri = 'data:application/vnd.ms-excel;base64,';
+            // Agregamos un metatag para asegurar la codificación UTF-8
+            // Es importante que el template tenga la meta charset al principio del head
+            const template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8"></head><body>{table}</body></html>';
+            const base64 = function(s) { return btoa(unescape(encodeURIComponent(s))) };
+            const format = function(s, c) { return s.replace(/{(\w+)}/g, function(m, p) { return c[p]; }) };
+
+            const ctx = {
+                worksheet: 'Retenciones',
+                table: exportTable // Usamos la tabla de exportación limpia
             };
-            reader.readAsText(file);
+
+            const link = document.createElement('a');
+            link.href = uri + base64(format(template, ctx));
+            link.download = 'retenciones.xls';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        document.getElementById("filterSelect").addEventListener("change", renderTable);
+
+        document.getElementById("fileInput").addEventListener("change", function (event) {
+            const files = event.target.files;
+            if (files.length === 0) {
+                alert("Selecciona al menos un archivo XML.");
+                return;
+            }
+
+            allRecordsForTable = [];
+            fullXmlRecords = {};
+            let filesProcessed = 0;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    try {
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+
+                        const autorizacionNode = xmlDoc.getElementsByTagName("autorizacion")[0];
+                        const fechaAutorizacion = autorizacionNode?.getElementsByTagName("fechaAutorizacion")[0]?.textContent?.trim();
+                        const ambienteAutorizacion = autorizacionNode?.getElementsByTagName("ambiente")[0]?.textContent?.trim();
+
+                        const comprobanteCDATAText = xmlDoc.getElementsByTagName("comprobante")[0]?.textContent;
+                        if (!comprobanteCDATAText) {
+                            console.warn("No se encontró el CDATA 'comprobante' en el archivo:", file.name);
+                            filesProcessed++;
+                            if (filesProcessed === files.length) {
+                                renderTable();
+                            }
+                            return;
+                        }
+
+                        const retencionXML = parser.parseFromString(comprobanteCDATAText, "text/xml");
+
+                        const infoTrib = retencionXML.getElementsByTagName("infoTributaria")[0];
+                        const infoCompRetencion = retencionXML.getElementsByTagName("infoCompRetencion")[0];
+                        const docSustentoNode = retencionXML.getElementsByTagName("docSustento")[0]; 
+                        const infoAdicionalNode = retencionXML.getElementsByTagName("infoAdicional")[0];
+
+                        if (!infoTrib || !infoCompRetencion) {
+                            console.warn("Faltan 'infoTributaria' o 'infoCompRetencion' en el archivo:", file.name);
+                            filesProcessed++;
+                            if (filesProcessed === files.length) {
+                                renderTable();
+                            }
+                            return;
+                        }
+                        
+                        let email = '';
+                        let telefono = '';
+                        let infoAdicionalText = '';
+                        if (infoAdicionalNode) {
+                            Array.from(infoAdicionalNode.getElementsByTagName('campoAdicional')).forEach(campo => {
+                                const nombre = campo.getAttribute('nombre');
+                                const valor = campo.textContent?.trim();
+                                if (nombre === 'E-MAIL') email = valor;
+                                if (nombre === 'Teléfono') telefono = valor;
+                                if (nombre === 'Info.') infoAdicionalText = valor;
+                            });
+                        }
+
+                        const estab = infoTrib.getElementsByTagName("estab")[0]?.textContent?.trim();
+                        const ptoEmi = infoTrib.getElementsByTagName("ptoEmi")[0]?.textContent?.trim();
+                        const secuencial = infoTrib.getElementsByTagName("secuencial")[0]?.textContent?.trim();
+
+                        const currentXmlData = {
+                            noDocumento: secuencial, 
+                            formattedDocNumber: formatDocumentNumber(estab, ptoEmi, secuencial), 
+                            claveAcceso: infoTrib.getElementsByTagName("claveAcceso")[0]?.textContent?.trim(),
+                            ruc: infoTrib.getElementsByTagName("ruc")[0]?.textContent?.trim(),
+                            razonSocial: infoTrib.getElementsByTagName("razonSocial")[0]?.textContent?.trim(),
+                            nombreComercial: infoTrib.getElementsByTagName("nombreComercial")[0]?.textContent?.trim(),
+                            dirMatriz: infoTrib.getElementsByTagName("dirMatriz")[0]?.textContent?.trim(),
+                            estab: estab, 
+                            ptoEmi: ptoEmi,
+                            codDoc: infoTrib.getElementsByTagName("codDoc")[0]?.textContent?.trim(),
+                            agenteRetencion: infoTrib.getElementsByTagName("agenteRetencion")[0]?.textContent?.trim(),
+                            tipoEmision: infoTrib.getElementsByTagName("tipoEmision")[0]?.textContent?.trim(),
+
+                            fechaEmision: infoCompRetencion.getElementsByTagName("fechaEmision")[0]?.textContent?.trim(),
+                            dirEstablecimiento: infoCompRetencion.getElementsByTagName("dirEstablecimiento")[0]?.textContent?.trim(),
+                            contribuyenteEspecial: infoCompRetencion.getElementsByTagName("contribuyenteEspecial")[0]?.textContent?.trim(),
+                            obligadoContabilidad: infoCompRetencion.getElementsByTagName("obligadoContabilidad")[0]?.textContent?.trim(),
+                            tipoIdentificacionSujetoRetenido: infoCompRetencion.getElementsByTagName("tipoIdentificacionSujetoRetenido")[0]?.textContent?.trim(),
+                            razonSocialSujetoRetenido: infoCompRetencion.getElementsByTagName("razonSocialSujetoRetenido")[0]?.textContent?.trim(),
+                            identificacionSujetoRetenido: infoCompRetencion.getElementsByTagName("identificacionSujetoRetenido")[0]?.textContent?.trim(),
+                            periodoFiscal: infoCompRetencion.getElementsByTagName("periodoFiscal")[0]?.textContent?.trim(),
+
+                            numDocSustento: docSustentoNode ? docSustentoNode.getElementsByTagName("numDocSustento")[0]?.textContent?.trim() : '',
+                            fechaEmisionDocSustento: docSustentoNode ? docSustentoNode.getElementsByTagName("fechaEmisionDocSustento")[0]?.textContent?.trim() : '',
+                            codDocSustento: docSustentoNode ? docSustentoNode.getElementsByTagName("codDocSustento")[0]?.textContent?.trim() : '',
+                            codSustento: docSustentoNode ? docSustentoNode.getElementsByTagName("codSustento")[0]?.textContent?.trim() : '',
+                            
+                            fechaAutorizacion: fechaAutorizacion,
+                            ambiente: ambienteAutorizacion,
+
+                            email: email,
+                            telefono: telefono,
+                            infoAdicionalText: infoAdicionalText,
+
+                            retenciones: [] 
+                        };
+
+                        const retenciones = retencionXML.getElementsByTagName("retencion");
+                        if (retenciones.length === 0) {
+                            console.warn("No se encontraron etiquetas 'retencion' dentro del comprobante en el archivo:", file.name);
+                            filesProcessed++;
+                            if (filesProcessed === files.length) {
+                                renderTable();
+                            }
+                            return;
+                        }
+
+                        Array.from(retenciones).forEach(retencion => {
+                            const codigo = retencion.getElementsByTagName("codigo")[0]?.textContent?.trim();
+                            const codigoRetencion = retencion.getElementsByTagName("codigoRetencion")[0]?.textContent?.trim();
+
+                            let tipoRetencion = "Desconocido";
+                            if (codigo === "2" && codigoRetencion) {
+                                tipoRetencion = "RET IVA";
+                            } else if (codigo === "1" && codigoRetencion) {
+                                tipoRetencion = "RET FUENTE";
+                            }
+
+                            const retencionDetail = {
+                                tipoRetencion: tipoRetencion,
+                                baseImponible: retencion.getElementsByTagName("baseImponible")[0]?.textContent?.trim() || '0',
+                                porcentajeRetener: retencion.getElementsByTagName("porcentajeRetener")[0]?.textContent?.trim() || '0',
+                                valorRetenido: retencion.getElementsByTagName("valorRetenido")[0]?.textContent?.trim() || '0',
+                                codigo: codigo,
+                                codigoRetencion: codigoRetencion
+                            };
+                            currentXmlData.retenciones.push(retencionDetail);
+
+                            const recordForTable = {
+                                noDocumento: currentXmlData.noDocumento,
+                                formattedDocNumber: currentXmlData.formattedDocNumber, 
+                                claveAcceso: currentXmlData.claveAcceso,
+                                tipoRetencion: retencionDetail.tipoRetencion,
+                                fechaEmision: currentXmlData.fechaEmision,
+                                ruc: currentXmlData.ruc,
+                                razonSocial: currentXmlData.razonSocial,
+                                baseImponible: retencionDetail.baseImponible,
+                                porcentajeRetener: retencionDetail.porcentajeRetener,
+                                valorRetenido: retencionDetail.valorRetenido,
+                                numDocSustento: currentXmlData.numDocSustento,
+                                fechaEmisionDocSustento: currentXmlData.fechaEmisionDocSustento,
+                            };
+                            allRecordsForTable.push(recordForTable);
+                        });
+
+                        fullXmlRecords[currentXmlData.claveAcceso] = currentXmlData;
+
+                    } catch (error) {
+                        console.error("Error al procesar el archivo", file.name, error);
+                        alert(`Error al procesar el archivo ${file.name}. Asegúrate de que es un XML de retención válido.`);
+                    } finally {
+                        filesProcessed++;
+                        if (filesProcessed === files.length) {
+                            renderTable();
+                        }
+                    }
+                };
+                reader.readAsText(file);
+            });
         });
-    });
-</script>
+    </script>
 </body>
 </html>
