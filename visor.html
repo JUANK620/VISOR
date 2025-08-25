@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visor de Retenciones</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
@@ -582,10 +583,10 @@ Fecha Emisión Sustento: ${record.fechaEmisionDocSustento || 'No disponible'}
                 exportTable += '<tr>';
                 exportTable += `<td>${record.formattedDocNumber}</td>`; 
                 // Aplicar el formato de texto directamente en la celda de la Clave de Acceso
-                exportTable += `<td style="mso-number-format:'\@'">${record.claveAcceso}</td>`; // <-- NOTA EL CAMBIO AQUÍ
+                exportTable += `<td style="mso-number-format:'\@'">${record.claveAcceso}</td>`; 
                 exportTable += `<td>${record.tipoRetencion}</td>`;
                 exportTable += `<td>${record.fechaEmision}</td>`;
-                exportTable += `<td>${record.ruc}</td>`;
+                exportTable += `<td>${record.ruc}</td>`; 
                 exportTable += `<td>${record.razonSocial}</td>`;
                 exportTable += `<td class="numeric">${record.baseImponible}</td>`; 
                 exportTable += `<td class="numeric">${record.porcentajeRetener}</td>`;
@@ -654,26 +655,26 @@ Fecha Emisión Sustento: ${record.fechaEmisionDocSustento || 'No disponible'}
                         const parser = new DOMParser();
                         const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
 
+                        // Utiliza la nueva función de parche para obtener el nodo comprobanteRetencion
+                        const comprobanteRetencionNode = getComprobanteNode(xmlDoc);
+
+                        // Si getComprobanteNode no devuelve un nodo válido, es un error irrecuperable para este archivo
+                        if (!comprobanteRetencionNode) {
+                            console.error("No se pudo obtener el nodo 'comprobanteRetencion' para el archivo:", file.name);
+                            throw new Error("No se pudo parsear el comprobante de retención.");
+                        }
+
                         const autorizacionNode = xmlDoc.getElementsByTagName("autorizacion")[0];
                         const fechaAutorizacion = autorizacionNode?.getElementsByTagName("fechaAutorizacion")[0]?.textContent?.trim();
                         const ambienteAutorizacion = autorizacionNode?.getElementsByTagName("ambiente")[0]?.textContent?.trim();
 
-                        const comprobanteCDATAText = xmlDoc.getElementsByTagName("comprobante")[0]?.textContent;
-                        if (!comprobanteCDATAText) {
-                            console.warn("No se encontró el CDATA 'comprobante' en el archivo:", file.name);
-                            filesProcessed++;
-                            if (filesProcessed === files.length) {
-                                renderTable();
-                            }
-                            return;
-                        }
-
-                        const retencionXML = parser.parseFromString(comprobanteCDATAText, "text/xml");
-
-                        const infoTrib = retencionXML.getElementsByTagName("infoTributaria")[0];
-                        const infoCompRetencion = retencionXML.getElementsByTagName("infoCompRetencion")[0];
-                        const docSustentoNode = retencionXML.getElementsByTagName("docSustento")[0]; 
-                        const infoAdicionalNode = retencionXML.getElementsByTagName("infoAdicional")[0];
+                        const infoTrib = comprobanteRetencionNode.getElementsByTagName("infoTributaria")[0];
+                        const infoCompRetencion = comprobanteRetencionNode.getElementsByTagName("infoCompRetencion")[0];
+                        
+                        // Para las versiones 1.0.0, 'docSustento' puede estar directamente bajo 'comprobanteRetencion'
+                        // Para las versiones 2.0.0, 'docSustento' está bajo 'docsSustento'
+                        const docSustentoNode = comprobanteRetencionNode.getElementsByTagName("docsSustento")[0]?.getElementsByTagName("docSustento")[0] || comprobanteRetencionNode.getElementsByTagName("docSustento")[0]; 
+                        const infoAdicionalNode = comprobanteRetencionNode.getElementsByTagName("infoAdicional")[0];
 
                         if (!infoTrib || !infoCompRetencion) {
                             console.warn("Faltan 'infoTributaria' o 'infoCompRetencion' en el archivo:", file.name);
@@ -739,9 +740,24 @@ Fecha Emisión Sustento: ${record.fechaEmisionDocSustento || 'No disponible'}
                             retenciones: [] 
                         };
 
-                        const retenciones = retencionXML.getElementsByTagName("retencion");
-                        if (retenciones.length === 0) {
-                            console.warn("No se encontraron etiquetas 'retencion' dentro del comprobante en el archivo:", file.name);
+                        const comprobanteVersion = comprobanteRetencionNode.getAttribute('version');
+                        let retencionDetailsNodes = []; // Cambiado el nombre para mayor claridad
+
+                        if (comprobanteVersion === '2.0.0') {
+                            const retencionesContainer = comprobanteRetencionNode.getElementsByTagName("retenciones")[0];
+                            if (retencionesContainer) {
+                                retencionDetailsNodes = Array.from(retencionesContainer.getElementsByTagName("retencion"));
+                            }
+                        } else if (comprobanteVersion === '1.0.0') {
+                            const impuestosNode = comprobanteRetencionNode.getElementsByTagName("impuestos")[0];
+                            if (impuestosNode) {
+                                // Para la versión 1.0.0, cada 'impuesto' es directamente el nodo de detalle de retención
+                                retencionDetailsNodes = Array.from(impuestosNode.getElementsByTagName("impuesto"));
+                            }
+                        }
+
+                        if (retencionDetailsNodes.length === 0) {
+                            console.warn("No se encontraron etiquetas de detalle de retención ('retencion' o 'impuesto') en el archivo:", file.name);
                             filesProcessed++;
                             if (filesProcessed === files.length) {
                                 renderTable();
@@ -749,9 +765,9 @@ Fecha Emisión Sustento: ${record.fechaEmisionDocSustento || 'No disponible'}
                             return;
                         }
 
-                        Array.from(retenciones).forEach(retencion => {
-                            const codigo = retencion.getElementsByTagName("codigo")[0]?.textContent?.trim();
-                            const codigoRetencion = retencion.getElementsByTagName("codigoRetencion")[0]?.textContent?.trim();
+                        Array.from(retencionDetailsNodes).forEach(retencionDetailNode => {
+                            const codigo = retencionDetailNode.getElementsByTagName("codigo")[0]?.textContent?.trim();
+                            const codigoRetencion = retencionDetailNode.getElementsByTagName("codigoRetencion")[0]?.textContent?.trim();
 
                             let tipoRetencion = "Desconocido";
                             if (codigo === "2" && codigoRetencion) {
@@ -762,9 +778,9 @@ Fecha Emisión Sustento: ${record.fechaEmisionDocSustento || 'No disponible'}
 
                             const retencionDetail = {
                                 tipoRetencion: tipoRetencion,
-                                baseImponible: retencion.getElementsByTagName("baseImponible")[0]?.textContent?.trim() || '0',
-                                porcentajeRetener: retencion.getElementsByTagName("porcentajeRetener")[0]?.textContent?.trim() || '0',
-                                valorRetenido: retencion.getElementsByTagName("valorRetenido")[0]?.textContent?.trim() || '0',
+                                baseImponible: retencionDetailNode.getElementsByTagName("baseImponible")[0]?.textContent?.trim() || '0',
+                                porcentajeRetener: retencionDetailNode.getElementsByTagName("porcentajeRetener")[0]?.textContent?.trim() || '0',
+                                valorRetenido: retencionDetailNode.getElementsByTagName("valorRetenido")[0]?.textContent?.trim() || '0',
                                 codigo: codigo,
                                 codigoRetencion: codigoRetencion
                             };
@@ -791,7 +807,8 @@ Fecha Emisión Sustento: ${record.fechaEmisionDocSustento || 'No disponible'}
 
                     } catch (error) {
                         console.error("Error al procesar el archivo", file.name, error);
-                        alert(`Error al procesar el archivo ${file.name}. Asegúrate de que es un XML de retención válido.`);
+                        // Mensaje de alerta más informativo
+                        alert(`Error al procesar el archivo ${file.name}. Asegúrate de que es un XML de retención válido y compatible. Detalle: ${error.message}`);
                     } finally {
                         filesProcessed++;
                         if (filesProcessed === files.length) {
@@ -802,6 +819,52 @@ Fecha Emisión Sustento: ${record.fechaEmisionDocSustento || 'No disponible'}
                 reader.readAsText(file);
             });
         });
+
+        // Este es el parche para manejar ambas versiones de XML (1.0.0 y 2.0.0)
+        function getComprobanteNode(xmlDoc) {
+            const parser = new DOMParser();
+            
+            // Buscar la etiqueta 'autorizacion' y luego 'comprobante'
+            const autorizacionNode = xmlDoc.getElementsByTagName('autorizacion')[0];
+            if (!autorizacionNode) {
+                console.error("Nodo 'autorizacion' no encontrado en el XML.");
+                return null;
+            }
+            const comprobanteWrapperNode = autorizacionNode.getElementsByTagName('comprobante')[0];
+            if (!comprobanteWrapperNode) {
+                console.error("Nodo 'comprobante' (wrapper) no encontrado en el XML.");
+                return null;
+            }
+
+            let comprobanteXmlString = "";
+            // Node.CDATA_SECTION_NODE tiene un valor de 4
+            if (comprobanteWrapperNode.firstChild && comprobanteWrapperNode.firstChild.nodeType === 4) { 
+                // Versión 2.0.0: contenido dentro de CDATA
+                comprobanteXmlString = comprobanteWrapperNode.firstChild.nodeValue;
+            } else {
+                // Versión 1.0.0: el contenido del comprobanteRetencion está directamente en el comprobanteWrapperNode
+                // En este caso, el comprobanteWrapperNode *es* ya el comprobanteRetencion para la v1.0.0,
+                // pero si el parser lo encierra en CDATA, entonces necesitamos un re-parseo.
+                // Sin CDATA, el XMLSerializer lo serializará.
+                // Sin embargo, para v1.0.0, el comprobanteRetencion no está dentro de CDATA, está "inline".
+                // Simplificamos: si no hay CDATA, asumimos que el comprobanteWrapperNode es directamente el XML a parsear si es un comprobanteRetencion.
+                 // Si no hay CDATA, y el primer hijo es un elemento (e.g., comprobanteRetencion), lo usamos directamente.
+                 if (comprobanteWrapperNode.firstElementChild && comprobanteWrapperNode.firstElementChild.tagName === 'comprobanteRetencion') {
+                     return comprobanteWrapperNode.firstElementChild; // Ya es el nodo que necesitamos
+                 } else {
+                    // Fallback para otros casos raros, pero debería estar cubierto por el anterior
+                    comprobanteXmlString = (new XMLSerializer()).serializeToString(comprobanteWrapperNode);
+                 }
+            }
+
+            // Si comprobanteXmlString tiene contenido, lo parseamos para obtener el nodo 'comprobanteRetencion'
+            if (comprobanteXmlString) {
+                const comprobanteXmlDoc = parser.parseFromString(comprobanteXmlString, "text/xml");
+                return comprobanteXmlDoc.getElementsByTagName('comprobanteRetencion')[0];
+            }
+            
+            return null; // Si no se pudo obtener el nodo de ninguna manera
+        }
     </script>
 </body>
 </html>
