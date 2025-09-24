@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .form-container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 12px 20px;
+            margin-right: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        #generateBtn { background-color: #3498db; }
+        #generateBtn:hover { background-color: #2980b9; }
+        #exportPdfBtn { background-color: #e74c3c; }
+        #exportPdfBtn:hover { background-color: #c0392b; }
+        #exportWordBtn { background-color: #2c3e50; }
+        #exportWordBtn:hover { background-color: #1a242f; }
+        #printBtn { background-color: #7f8c8d; }
+        #printBtn:hover { background-color: #5d6d7e; }
+        #output {
+            margin-top: 30px;
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            line-height: 1.6;
+            min-height: 400px;
+        }
+        .protocol-content {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11pt;
+            max-width: 650px;
+            margin: auto;
+            color: #333;
+        }
+        .protocol-content h2, .protocol-content h3 {
+            text-align: center;
+        }
+        .protocol-content h2 {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 0.5em;
+        }
+        .protocol-content h3 {
+            font-size: 1.3em;
+            color: #34495e;
+            text-align: left;
+            margin-top: 2em;
+        }
+        .protocol-content hr {
+            border: 0;
+            height: 1px;
+            background: #ccc;
+            margin: 20px 0;
+        }
+        .center-text { text-align: center; }
+        .logo { max-height: 80px; margin-bottom: 20px; }
+        ul, ol {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+        /* Reglas de estilo para la impresión */
+        @media print {
+            body {
+                background: none;
+                margin: 0;
+            }
+            .form-container, .footer {
+                display: none;
+            }
+            .container {
+                box-shadow: none;
+            }
+            #output {
+                margin-top: 0;
+                padding: 0;
+                box-shadow: none;
+                background: none;
+            }
+            .protocol-content {
+                width: 100%;
+                max-width: 100%;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1></h1>
+        <div class="form-container">
+            <form id="protocolForm">
+                <label for="logo">Logo de la empresa:</label>
+                <input type="file" id="logo" accept="image/*">
+                <label for="empresa">Nombre de la empresa:</label>
+                <input type="text" id="empresa" required value="">
+                <label for="ruc">RUC:</label>
+                <input type="text" id="ruc" required value="">
+                <label for="empleados">Cantidad de empleados:</label>
+                <input type="number" id="empleados" required value="NUMERO DE EMPLEADOS">
+                <div style="text-align: center; margin-top: 20px;">
+                    <button type="button" id="generateBtn">Generar Protocolo</button>
+                    <button type="button" id="printBtn" style="display:none;">Imprimir Vista Previa</button>
+                    <button type="button" id="exportPdfBtn" style="display:none;">Exportar a PDF</button>
+                    <button type="button" id="exportWordBtn" style="display:none;">Exportar a Word</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="output">
+            <h2>Previsualización del Protocolo</h2>
+            <p style="text-align: center;">Por favor, complete los campos y haga clic en 'Generar Protocolo'.</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateBtn = document.getElementById('generateBtn');
+            const printBtn = document.getElementById('printBtn');
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const exportWordBtn = document.getElementById('exportWordBtn');
+            const outputDiv = document.getElementById('output');
+
+            const getProtocolContent = (empresa, ruc, empleados, logoUrl) => {
+                const logoHtml = logoUrl ? `<div class="center-text"><img src="${logoUrl}" alt="Logo" class="logo"></div>` : '';
+                return `
+                    <div class="protocol-content" id="protocol-to-export">
+                        <div class="center-text">
+                            ${logoHtml}
+                            <h2 style="color:#2c3e50;">Protocolo Interno de Prevención y Erradicación de la Discriminación, Violencia y Acoso Laboral</h2>
+                            <p><strong>Empresa:</strong> ${empresa}</p>
+                            <p><strong>RUC:</strong> ${ruc}</p>
+                            <p><strong>Número de Empleados:</strong> ${empleados}</p>
+                            <p><strong>Fecha de generación:</strong> ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        </div>
+                        <hr>
+                        <h3>TÍTULO I: ASPECTOS GENERALES</h3>
+                        <p><strong>Artículo 1. Objeto:</strong> El presente Protocolo Interno tiene como objetivo establecer un marco de acción claro para prevenir, identificar, atender y sancionar cualquier manifestación de discriminación, violencia y acoso laboral en <strong>${empresa}</strong>.</p>
+                        <p><strong>Artículo 2. Ámbito de Aplicación:</strong> Este protocolo es de aplicación obligatoria para todos los trabajadores y empleadores sujetos al Código del Trabajo, así como para terceros que interactúen en el lugar de trabajo o en actividades relacionadas.</p>
+                        <p><strong>Artículo 3. Principios Rectores:</strong></p>
+                        <ul>
+                            <li><strong>Dignidad Humana:</strong> Todo empleado tiene derecho a un trato digno y respetuoso.</li>
+                            <li><strong>Igualdad y No Discriminación:</strong> Se garantiza la igualdad de trato y oportunidades para todos.</li>
+                            <li><strong>Confidencialidad:</strong> Se mantendrá la estricta confidencialidad de la información y de las partes involucradas.</li>
+                            <li><strong>Protección a la Víctima:</strong> Se tomarán medidas para proteger a la presunta víctima y asegurar un proceso justo.</li>
+                        </ul>
+                        <hr>
+                        <h3>TÍTULO II: DEFINICIONES Y CONDUCTAS PROHIBIDAS</h3>
+                        <p><strong>Artículo 4. Definiciones:</strong></p>
+                        <ul>
+                            <li><strong>Discriminación:</strong> Cualquier acción basada en etnia, género, edad, orientación sexual, estado de salud, entre otras, que tenga por objeto menoscabar los derechos laborales.</li>
+                            <li><strong>Violencia Laboral:</strong> Comportamientos y prácticas que causen daño físico, psicológico, sexual, económico o de cualquier otro tipo a un trabajador.</li>
+                            <li><strong>Acoso Laboral:</strong> Todo comportamiento reiterado y potencialmente lesivo que cause menoscabo, maltrato o humillación, y que amenace o perjudique los derechos de un empleado.</li>
+                        </ul>
+                        <p><strong>Artículo 5. Conductas Prohibidas:</strong> Se prohíben explícitamente, de forma enunciativa pero no limitativa, las siguientes conductas:</p>
+                        <ul>
+                            <li>Comentarios ofensivos o estereotipos de género, raza, orientación sexual, entre otros.</li>
+                            <li>Condiciones de trabajo hostiles o intimidantes.</li>
+                            <li>Aislamiento social o emocional de la víctima.</li>
+                            <li>Exigir pruebas de embarazo, VIH, estado civil o filiación sindical en los procesos de selección, a menos que sean requisitos legales especiales.</li>
+                        </ul>
+                        <hr>
+                        <h3>TÍTULO III: MECANISMOS DE PREVENCIÓN Y ATENCIÓN</h3>
+                        <p><strong>Artículo 6. Eje de Prevención:</strong> <strong>${empresa}</strong> se compromete a:</p>
+                        <ul>
+                            <li>Implementar un plan de sensibilización y capacitación anual para todo el personal sobre la importancia de un ambiente de trabajo respetuoso.</li>
+                            <li>Establecer una política de cero tolerancias a la discriminación, violencia y acoso.</li>
+                            <li>Difundir canales de comunicación claros para reportar casos.</li>
+                        </ul>
+                        <p><strong>Artículo 7. Eje de Identificación y Detección:</strong> Se capacitará al personal para reconocer señales de alerta como:</p>
+                        <ul>
+                            <li>Cambios en el rendimiento laboral.</li>
+                            <li>Manifestaciones de estrés, ansiedad o depresión.</li>
+                            <li>Aislamiento social o rumores persistentes.</li>
+                        </ul>
+                        <p><strong>Artículo 8. Eje de Atención y Denuncia:</strong></p>
+                        <ul>
+                            <li><strong>Canales de Denuncia:</strong> La denuncia podrá ser presentada de forma escrita o verbal ante el Gerente General, o la persona que la empresa designe. La denuncia puede ser de forma anónima o con identificación.</li>
+                            <li><strong>Medidas de Protección:</strong> Se tomarán medidas administrativas internas para proteger a la presunta víctima, como la separación del presunto agresor del entorno laboral.</li>
+                        </ul>
+                        <hr>
+                        <h3>TÍTULO IV: PROCEDIMIENTO DE DENUNCIA E INVESTIGACIÓN</h3>
+                        <p><strong>Artículo 9. Proceso de Investigación:</strong></p>
+                        <ol>
+                            <li><strong>Recepción de la Denuncia:</strong> El empleado afectado presenta su denuncia.</li>
+                            <li><strong>Investigación:</strong> Se recabarán pruebas, se entrevistará a los implicados y a posibles testigos. Se dará un plazo para que el presunto agresor presente pruebas de descargo.</li>
+                            <li><strong>Conclusión:</strong> Se emitirá un informe con las conclusiones y se aplicarán las sanciones correspondientes.</li>
+                        </ol>
+                        <p><strong>Artículo 10. Consecuencias y Sanciones:</strong> Si se comprueba el acoso, la empresa aplicará las sanciones establecidas en su Reglamento Interno y en el Código del Trabajo. Esto podría llevar a la terminación de la relación laboral si el caso lo amerita.</p>
+                        <hr>
+                        <h3>TÍTULO V: DISPOSICIONES FINALES</h3>
+                        <p><strong>Artículo 11. Monitoreo y Evaluación:</strong> El Gerente General o su delegado realizará un monitoreo trimestral de los casos denunciados y una evaluación anual del protocolo para garantizar su efectividad.</p>
+                        <p><strong>Artículo 12. Registro:</strong> El presente protocolo, una vez aprobado por la gerencia, deberá ser registrado obligatoriamente en la plataforma informática del Ministerio del Trabajo.</p>
+                    </div>
+                `;
+            };
+
+            const updatePreview = () => {
+                const empresa = document.getElementById('empresa').value;
+                const ruc = document.getElementById('ruc').value;
+                const empleados = document.getElementById('empleados').value;
+                const logoInput = document.getElementById('logo');
+                let logoUrl = '';
+                if (logoInput.files.length > 0) {
+                    logoUrl = URL.createObjectURL(logoInput.files[0]);
+                }
+                outputDiv.innerHTML = getProtocolContent(empresa, ruc, empleados, logoUrl);
+            };
+
+            generateBtn.addEventListener('click', () => {
+                const empresa = document.getElementById('empresa').value;
+                const ruc = document.getElementById('ruc').value;
+                const empleados = document.getElementById('empleados').value;
+                if (!empresa || !ruc || !empleados) {
+                    alert('Por favor, complete todos los campos.');
+                    return;
+                }
+                updatePreview();
+                printBtn.style.display = 'inline-block';
+                exportPdfBtn.style.display = 'inline-block';
+                exportWordBtn.style.display = 'inline-block';
+            });
+
+            printBtn.addEventListener('click', () => {
+                window.print();
+            });
+
+            exportPdfBtn.addEventListener('click', () => {
+                const element = document.getElementById('protocol-to-export');
+                html2pdf(element, {
+                    margin: 20,
+                    filename: `protocolo-acoso-laboral_${document.getElementById('empresa').value}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                });
+            });
+
+            exportWordBtn.addEventListener('click', () => {
+                const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${document.getElementById('protocol-to-export').outerHTML}</body></html>`;
+                const converted = htmlDocx.asBlob(html, {
+                    orientation: 'portrait',
+                    pageSize: 'A4'
+                });
+                saveAs(converted, `protocolo-acoso-laboral_${document.getElementById('empresa').value}.docx`);
+            });
+
+            document.getElementById('empresa').addEventListener('input', updatePreview);
+            document.getElementById('ruc').addEventListener('input', updatePreview);
+            document.getElementById('empleados').addEventListener('input', updatePreview);
+            document.getElementById('logo').addEventListener('change', updatePreview);
+
+            updatePreview();
+        });
+    </script>
+</body>
+</html>
