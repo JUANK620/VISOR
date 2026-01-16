@@ -107,7 +107,7 @@
         "520": "IVA pagado en adquisiciones tarifa diferente de cero",
         "601": "Impuesto causado (IVA)",
         "605": "Saldo crédito tributario para el próximo mes",
-        "699": "TOTAL IMPUESTO A PAGAR (IVA)"
+        "699": "TOTAL IMPUESTO A PAGAR (IVA)",
     };
 
     let periodos = [];
