@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRI Master - Reporte Consolidado Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { --primary: #1e40af; --accent: #3b82f6; --bg: #f8fafc; --text: #0f172a; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: auto; }
+        
+        .header { text-align: center; margin-bottom: 30px; }
+        .upload-zone { background: white; border: 2px dashed #cbd5e1; padding: 40px; border-radius: 20px; text-align: center; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .upload-zone:hover { border-color: var(--accent); background: #eff6ff; }
+
+        .table-container { background: white; border-radius: 12px; margin-top: 30px; overflow-x: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        
+        th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; vertical-align: middle; }
+        
+        .code-badge { background: #e2e8f0; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-weight: bold; font-size: 0.85rem; }
+        .desc-text { font-weight: 600; color: #334155; }
+        .val-num { text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+        .col-header { text-align: right; background: #f8fafc; }
+        .col-id { display: block; color: var(--accent); font-size: 0.65rem; font-weight: 800; }
+        
+        .controls { display: none; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .btn-excel { background: #16a34a; color: white; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-excel:hover { background: #15803d; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>📑 SRI Reporte Consolidado</h1>
+        <p>Nombres de casilleros sincronizados con Guías Oficiales Form. 103 y 104</p>
+    </div>
+
+    <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+        <h2 style="margin:0">📂 Seleccionar PDFs de IVA o Retenciones</h2>
+        <p style="color:#64748b">Puedes subir varios meses a la vez (Enero, Febrero, Marzo...)</p>
+        <input type="file" id="fileInput" multiple accept="application/pdf" style="display:none">
+    </div>
+
+    <div class="controls" id="controls">
+        <div id="fileStatus" style="font-weight: 600; color: #1e40af;"></div>
+        <button class="btn-excel" onclick="exportarExcel()">📥 Descargar Reporte en Excel</button>
+    </div>
+
+    <div class="table-container" id="tableContainer">
+        <table id="dataTable">
+            <thead id="tHead"></thead>
+            <tbody id="tBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // DICCIONARIO EXTRAÍDO DE LAS GUÍAS DEL SRI (103 y 104)
+    const diccSRI = {
+        // FORMULARIO 103 - RETENCIONES
+        "302": "En relación de dependencia que supera o no la base desgravada",
+        "352": "Retención: Relación de dependencia",
+        "303": "Honorarios profesionales y servicios relacionados con el intelecto",
+        "353": "Retención: Honorarios profesionales (Sociedades/Personas)",
+        "3030": "Servicios profesionales prestados por sociedades residentes",
+        "3530": "Retención: Servicios profesionales sociedades",
+        "304": "Servicios donde predomina el intelecto (no profesionales)",
+        "354": "Retención: Servicios intelecto no profesionales",
+        "307": "Servicios donde predomina la mano de obra",
+        "357": "Retención: Mano de obra",
+        "310": "Servicios prestados por medios de comunicación y agencias de publicidad",
+        "360": "Retención: Medios de comunicación",
+        "312": "Transferencia de bienes muebles de naturaleza corporal",
+        "362": "Retención: Transferencia de bienes muebles",
+        "319": "Arrendamiento de bienes inmuebles",
+        "369": "Retención: Arrendamiento",
+        "320": "Por seguros y reaseguros (primas y cesiones)",
+        "370": "Retención: Seguros y reaseguros",
+        "322": "Por rendimientos financieros o intereses de cualquier tipo",
+        "372": "Retención: Rendimientos financieros",
+        "344": "Otras retenciones aplicables el 2%",
+        "394": "Retención: Otras 2%",
+        "499": "Total Impuesto Retenido (Renta)",
+        "902": "TOTAL IMPUESTO A PAGAR (Retenciones)",
+
+        // FORMULARIO 104 - IVA
+        "401": "Ventas locales (excluye activos fijos) gravadas tarifa diferente de cero",
+        "411": "Ventas locales tarifa diferente de cero (Valor Neto)",
+        "421": "Impuesto generado (Ventas) tarifa diferente de cero",
+        "403": "Ventas locales (excluye activos fijos) gravadas tarifa 0%",
+        "413": "Ventas locales tarifa 0% (Valor Neto)",
+        "500": "Adquisiciones gravadas tarifa diferente de cero (con derecho a crédito)",
+        "510": "Adquisiciones tarifa diferente de cero (Valor Neto)",
+        "520": "IVA pagado en adquisiciones tarifa diferente de cero",
+        "601": "Impuesto causado (IVA)",
+        "605": "Saldo crédito tributario para el próximo mes",
+        "699": "TOTAL IMPUESTO A PAGAR (IVA)"
+    };
+
+    let periodos = [];
+    let masterData = [];
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        let rawData = {}; 
+        let casillerosSet = new Set();
+        periodos = [];
+
+        for (const file of files) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let text = "";
+            for (let i=1; i<=pdf.numPages; i++){
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                text += content.items.map(s => s.str).join(" ") + " ";
+            }
+
+            const periodo = (text.match(/Período Fiscal:\s*([A-Z]+\s+\d{4})/) || [null, file.name])[1];
+            periodos.push(periodo);
+            rawData[periodo] = {};
+
+            const regex = /(\d{3,4})\s+(\d+\.\d{2})/g;
+            let m;
+            while ((m = regex.exec(text)) !== null) {
+                const cod = m[1];
+                const val = parseFloat(m[2]);
+                if (val > 0) {
+                    rawData[periodo][cod] = val;
+                    casillerosSet.add(cod);
+                }
+            }
+        }
+
+        masterData = Array.from(casillerosSet).sort().map(c => {
+            let row = { Codigo: c, Descripcion: diccSRI[c] || "Otros valores / Información adicional" };
+            periodos.forEach(p => row[p] = rawData[p][c] || 0);
+            return row;
+        });
+
+        renderTable();
+    });
+
+    function renderTable() {
+        const head = document.getElementById('tHead');
+        const body = document.getElementById('tBody');
+        
+        head.innerHTML = `<tr><th style="width:100px">CÓD</th><th style="width:400px">DESCRIPCIÓN</th>` + 
+            periodos.map((p, i) => `<th class="col-header"><span class="col-id">COLUMNA ${i+1}</span>${p}</th>`).join('') + `</tr>`;
+        
+        body.innerHTML = masterData.map(row => `
+            <tr>
+                <td><span class="code-badge">${row.Codigo}</span></td>
+                <td class="desc-text">${row.Descripcion}</td>
+                ${periodos.map(p => `<td class="val-num">$ ${row[p].toLocaleString('en-US',{minimumFractionDigits:2})}</td>`).join('')}
+            </tr>
+        `).join('');
+
+        document.getElementById('controls').style.display = 'flex';
+        document.getElementById('tableContainer').style.display = 'block';
+        document.getElementById('fileStatus').innerText = `Procesados ${periodos.length} archivos con éxito.`;
+    }
+
+    function exportarExcel() {
+        const ws = XLSX.utils.json_to_sheet(masterData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "SRI_Consolidado");
+        XLSX.writeFile(wb, "Reporte_SRI_Final.xlsx");
+    }
+</script>
+
+</body>
+</html>
