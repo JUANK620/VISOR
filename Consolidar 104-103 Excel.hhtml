@@ -48,7 +48,7 @@
 
     <div class="controls" id="controls">
         <div id="fileStatus" style="font-weight: 600; color: #1e40af;"></div>
-        <button class="btn-excel" onclick="exportarExcel()">📥 Descargar Reporte en Excel</button>
+        <button class="btn-excel" onclick="exportarExcel()">Descargar Reporte en Excel</button>
     </div>
 
     <div class="table-container" id="tableContainer">
