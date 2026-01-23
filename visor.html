@@ -1,74 +1,10 @@
-<head>
-   <meta charset="UTF-8">
-   <meta name="google-site-verification" content="
-   
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página Principal</title>
-    <style>
-        /* Estilos CSS para el menú */
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f9f9f9;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-        }
-
-        .dropdown-content a {
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-        }
-
-        .dropdown-content a:hover {
-            background-color: #f1f1f1;
-        }
-
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-
-        .dropbtn {
-            background-color: #4CAF50;
-            color: white;
-            padding: 16px;
-            font-size: 16px;
-            border: none;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="dropdown">
-        <button class="dropbtn">Menú</button>
-        <div class="dropdown-content">
-            <a href="index.html">Inicio</a>
-            <a href="visor.html">Visor Retenciones .xml</a>
-            <a href="Consolidar 104-103 Excel">Consolidar 104-103 Excel</a>
-            <a href="otra-pagina.html">CRM Whatsapp</a>
-        </div>
-    </div>
-
-</body>
-</html>
-
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Si necesitas verificación de Google, coloca aquí el token correcto:
+         <meta name="google-site-verification" content="TU_TOKEN_AQUI" /> -->
     <title>Visor de Retenciones</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
@@ -305,7 +241,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-    <div class="top-bar"></div> <div class="main-content">
+    <div class="top-bar"></div>
+    <div class="main-content">
         <div class="header-sri">
             <h1>Comprobantes Electrónicos Recibidos</h1>
             <div class="header-info">
@@ -649,7 +586,7 @@ Fecha Emisión Sustento: ${record.fechaEmisionDocSustento || 'No disponible'}
                 exportTable += '<tr>';
                 exportTable += `<td>${record.formattedDocNumber}</td>`; 
                 // Aplicar el formato de texto directamente en la celda de la Clave de Acceso
-                exportTable += `<td style="mso-number-format:'\@'">${record.claveAcceso}</td>`; 
+                exportTable += `<td style="mso-number-format:'\\@'">${record.claveAcceso}</td>`; 
                 exportTable += `<td>${record.tipoRetencion}</td>`;
                 exportTable += `<td>${record.fechaEmision}</td>`;
                 exportTable += `<td>${record.ruc}</td>`; 
@@ -934,10 +871,3 @@ Fecha Emisión Sustento: ${record.fechaEmisionDocSustento || 'No disponible'}
     </script>
 </body>
 </html>
-" />
-<title>Visor de Retenciones</title>
-</head>
-
-
-
-
